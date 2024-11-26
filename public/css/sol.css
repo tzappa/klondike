@@ -1,0 +1,60 @@
+.card {
+    width: 100px;
+    height: 150px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: white;
+    user-select: none;
+    cursor: pointer;
+}
+
+.card .clubs {
+    color: black;
+}
+
+.card .diamonds {
+    color: red;
+}
+
+.card .hearts {
+    color: red;
+}
+
+.card .spades {
+    color: black;
+}
+
+.card .facedown {
+    color: #fff;
+}
+
+.pile {
+    width: 100px;
+    min-height: 150px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 10px;
+    border-radius: 10px;
+    border: 1px solid #c09;
+    user-select: none;
+    position: relative;
+}
+
+.foundation {
+    width: 100px;
+    height: 150px;
+    border: 1px solid #0c0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 10px;
+    border-radius: 10px;
+    user-select: none;
+    position: relative;
+}

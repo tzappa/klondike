@@ -61,6 +61,10 @@
     position: absolute;
 }
 
+.card.selected {
+    border-color: #f00;
+}
+
 .foundation {
     font-size: 40px;
     width: 100px;

@@ -218,21 +218,19 @@ class Foundation extends Pile {
 
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
-	// create a draw pile
 	const drawPile = new Pile(table, 'drawPile');
-	// create a discard pile
 	const discardPile = new Pile(table, 'discardPile');
 	// create a foundation for each suit
-	let foundation = {};
+	let foundations = {};
 	for (let suit of ['S', 'H', 'D', 'C']) {
-		const f = new Foundation(suit, table, `foundation${suit[0]}`);
-		foundation[suit] = f;
+		const foundation = new Foundation(suit, table, `foundation${suit[0]}`);
+		foundations[suit] = foundation;
 	}
 	// create a 7 pile tableau
-	let pile = [];
+	let piles = [];
 	for (let i = 1; i <= 7; i++) {
 		const t = new Tableau(table, `pile${i}`);
-		pile.push(t);
+		piles.push(t);
 	}
 	// create a deck
 	const deck = new Deck();
@@ -244,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (j === i) {
 				card.flip();
 			}
-			pile[j - 1].addCard(card);
+			piles[j - 1].addCard(card);
 		}
 	}
 	// add remaining cards to the draw pile
@@ -252,28 +250,84 @@ document.addEventListener('DOMContentLoaded', function() {
 		drawPile.addCard(deck.drawCard());
 	}
 
+	// variable to keep track of selected card (only one card can be selected at a time)
+	var selected = false;
+	function selectCard(card) {
+		if (selected) {
+			selected.element.classList.remove('selected');
+			if (selected == card) {
+				selected = false;
+				return;
+			}
+			selected = false;
+		}
+		if (card) {
+			card.element.classList.add('selected');
+		}
+		selected = card;
+	}
+
 	// add click event listener to draw pile
 	document.getElementById('drawPile').addEventListener('click', function() {
+		selectCard(false);
 		if (drawPile.isEmpty()) {
 			while (!discardPile.isEmpty()) {
 				let card = discardPile.removeCard();
 				card.flip();
 				drawPile.addCard(card);
 			}
+		} else {
+			let card = drawPile.removeCard();
+			card.flip();
+			discardPile.addCard(card);
 		}
-		let card = drawPile.removeCard();
-		card.flip();
-		discardPile.addCard(card);
 	});
 
 	// add a double click event listener to the discard pile
 	document.getElementById('discardPile').addEventListener('dblclick', function() {
+		selectCard(false);
 		let card = discardPile.topCard();
+		if (!card) {
+			return;
+		}
 		try {
-			foundation[card.suit.name[0]].addCard(card);
+			foundations[card.suit.name[0]].addCard(card);
 			discardPile.removeCard();
 		} catch (e) {
-			console.log(e);
+			console.log(e.message);
 		}
 	});
+
+
+	// add click event listener to the tableau piles
+	for (let i = 1; i <= 7; i++) {
+		let pile = piles[i - 1];
+		// single click to select or move a card
+		document.getElementById(`pile${i}`).addEventListener('click', function() {
+			let card = pile.topCard();
+			if (!card) {
+				return;
+			}
+			selectCard(card);
+		});
+
+		// double click to move a card to the foundation
+		document.getElementById(`pile${i}`).addEventListener('dblclick', function() {
+			selectCard(false);
+			let card = pile.topCard();
+			if (!card) {
+				return;
+			}
+			try {
+				foundations[card.suit.name[0]].addCard(card);
+				pile.removeCard(card);
+				let bottomCard = pile.topCard();
+				if (bottomCard) {
+					bottomCard.flip();
+				}
+			} catch (e) {
+				console.log(e.message);
+			}
+		});
+	}
 });

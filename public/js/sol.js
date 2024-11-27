@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				foundations[card.suit.name[0]].addCard(card);
 				pile.removeCard(card);
 				let bottomCard = pile.topCard();
-				if (bottomCard) {
+				if (bottomCard && !bottomCard.isFaceUp) {
 					bottomCard.flip();
 				}
 			} catch (e) {

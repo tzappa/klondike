@@ -14,6 +14,10 @@ class Suit {
 		this.symbol = symbol;
 	}
 
+	static get SPADES() {
+		return new Suit('♠');
+	}
+
 	static get HEARTS() {
 		return new Suit('♥');
 	}
@@ -26,8 +30,12 @@ class Suit {
 		return new Suit('♣');
 	}
 
-	static get SPADES() {
-		return new Suit('♠');
+	isRed() {
+		return this.symbol === '♥' || this.symbol === '♦';
+	}
+
+	isBlack() {
+		return this.symbol === '♠' || this.symbol === '♣';
 	}
 
 	static fromString(suit) {
@@ -79,6 +87,7 @@ class Card {
 		this.suit = Suit.fromString(suit);
 		this.value = CardValue.fromString(value);
 		this.isFaceUp = faceUp;
+		this.pile = null;
 
 		this.element = document.createElement('div');
 		this.element.classList.add('card');
@@ -86,6 +95,20 @@ class Card {
 		this.element.style.left = '0px';
 		this.element.style.top = '0px';
 		this.element.innerHTML = this.toString();
+	}
+
+	faceUp() {
+		if (this.isFaceUp) {
+			return;
+		}
+		this.flip();
+	}
+
+	faceDown() {
+		if (!this.isFaceUp) {
+			return;
+		}
+		this.flip();
 	}
 
 	flip() {
@@ -103,10 +126,6 @@ class Card {
 	pos(left, top) {
 		this.element.style.left = `${left}px`;
 		this.element.style.top = `${top}px`;
-	}
-
-	parent(element) {
-		element.appendChild(this.element);
 	}
 
 	toString() {
@@ -160,22 +179,41 @@ class Pile {
 	}
 
 	addCard(card) {
+		if (card.pile) {
+			card.pile._removeCard(card);
+		}
 		this.cards.push(card);
-		card.parent(this.element);
+		this.element.appendChild(card.element);
+		card.pile = this;
 	}
 
-	removeCard() {
-		let card = this.cards.pop();
-		card.pos(0, 0);
-		return card;
+	_removeCard(card) {
+		let index = this.cards.indexOf(card);
+		if (index === -1) {
+			throw new Error('Card not found');
+		}
+		this.cards.splice(index, 1);
+		this.element.removeChild(card.element);
+	}
+
+	cardsCount() {
+		return this.cards.length;
 	}
 
 	topCard() {
-		return this.cards[this.cards.length - 1];
+		return this.cards[this.cardsCount() - 1];
+	}
+
+	cardIndex(card) {
+		return this.cards.indexOf(card);
 	}
 
 	isEmpty() {
-		return this.cards.length === 0;
+		return this.cardsCount() === 0;
+	}
+
+	toString() {
+		return this.cards.map(card => card.toString()).join(' ');
 	}
 }
 
@@ -235,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		for (let j = i; j <= 7; j++) {
 			const card = deck.drawCard();
 			if (j === i) {
-				card.flip();
+				card.faceUp();
 			}
 			piles[j - 1].addCard(card);
 		}
@@ -262,67 +300,119 @@ document.addEventListener('DOMContentLoaded', function() {
 		selected = card;
 	}
 
-	// add click event listener to draw pile
-	document.getElementById('drawPile').addEventListener('click', function() {
+	function moveToPile(pile, card = selected) {
+		let oldPile = card.pile;
+		pile.addCard(card);
 		selectCard(false);
-		if (drawPile.isEmpty()) {
-			while (!discardPile.isEmpty()) {
-				let card = discardPile.removeCard();
-				card.flip();
-				drawPile.addCard(card);
-			}
-		} else {
-			let card = drawPile.removeCard();
-			card.flip();
-			discardPile.addCard(card);
+		if (!oldPile.isEmpty()) {
+			oldPile.topCard().faceUp();
 		}
-	});
+	}
 
-	// add a double click event listener to the discard pile
-	document.getElementById('discardPile').addEventListener('dblclick', function() {
+	function moveToFoundation(pile) {
 		selectCard(false);
-		let card = discardPile.topCard();
+		let card = pile.topCard();
 		if (!card) {
 			return;
 		}
 		try {
-			foundations[card.suit.name[0]].addCard(card);
-			discardPile.removeCard();
+			moveToPile(foundations[card.suit.name[0]], card);
 		} catch (e) {
 			console.log(e.message);
-		}
+		}		
+	}
+
+	// add click event listener to draw pile
+	document.getElementById('drawPile').addEventListener('click', function() {
+		selectCard(false);
+		// no more cards to draw
+		if (drawPile.isEmpty()) {
+			while (!discardPile.isEmpty()) {
+				let card = discardPile.topCard();
+				card.faceDown();
+				drawPile.addCard(card);
+			}
+			return ;
+		} 
+		let card = drawPile.topCard();
+		card.faceUp();
+		discardPile.addCard(card);
 	});
 
+	document.getElementById('discardPile').addEventListener('click', function() {
+		selectCard(discardPile.topCard());
+	});
+
+	// add a double click event listener to the discard pile - move the card to foundation
+	document.getElementById('discardPile').addEventListener('dblclick', function() {
+		moveToFoundation(discardPile);
+	});
 
 	// add click event listener to the tableau piles
 	for (let i = 1; i <= 7; i++) {
 		let pile = piles[i - 1];
 		// single click to select or move a card
 		document.getElementById(`pile${i}`).addEventListener('click', function() {
+			console.log(pile.toString());
 			let card = pile.topCard();
-			if (!card) {
-				return;
+			// if the pile is empty and selected card is a King
+			if (selected && selected.value.symbol === 'K' && pile.isEmpty()) {
+				moveToPile(pile);
+				return ;
 			}
+			if (!card) {
+				return ;
+			}
+			if (!selected) {
+				selectCard(card);
+				return ;
+			}
+			if (selected == card) {
+				selectCard(false);
+				return ;
+			}
+			if (selected.pile == pile) {
+				selectCard(false);
+				return ;
+			}
+			if ((selected.value.rank == card.value.rank - 1) && (selected.suit.isRed() != card.suit.isRed())) {
+				moveToPile(pile);
+				return ;
+			}
+			// no moving more than one card from the discard pile
+			if (selected.pile == discardPile) {
+				return ;
+			}
+			// get the previous card to the selected in the pile
+			let fromPile = selected.pile;
+			let prevCard = selected;
+			while (true) {
+				prevCard = fromPile.cards[fromPile.cards.indexOf(prevCard) - 1];
+				if (!prevCard) {
+					break;
+				}
+				if (!prevCard.isFaceUp) {
+					break;
+				} 
+				if ((prevCard.value.rank == card.value.rank - 1) && (prevCard.suit.isRed() != card.suit.isRed())) {
+					selectCard(false);
+					let index = fromPile.cardIndex(prevCard);
+					console.log(prevCard.toString(), index);
+					let cards = fromPile.cards.splice(index);
+					for (let c of cards) {
+						console.log(c.toString());
+						moveToPile(pile, c);
+					}
+				}
+				break;
+			}
+			
 			selectCard(card);
 		});
 
 		// double click to move a card to the foundation
 		document.getElementById(`pile${i}`).addEventListener('dblclick', function() {
-			selectCard(false);
-			let card = pile.topCard();
-			if (!card) {
-				return;
-			}
-			try {
-				foundations[card.suit.name[0]].addCard(card);
-				pile.removeCard(card);
-				let bottomCard = pile.topCard();
-				if (bottomCard && !bottomCard.isFaceUp) {
-					bottomCard.flip();
-				}
-			} catch (e) {
-				console.log(e.message);
-			}
+			moveToFoundation(pile);
 		});
 	}
 });

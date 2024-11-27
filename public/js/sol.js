@@ -112,11 +112,6 @@ class Card {
 	toString() {
 		return this.isFaceUp ? `${this.value.symbol}${this.suit.symbol}` : '?';
 	}
-
-	_toHtml() {
-		const cardClass = this.isFaceUp ? this.suit.name.toLowerCase() : 'facedown';
-		return `<div class="card ${cardClass}">${this.toString()}</div>`;
-	}
 }
 
 class Deck {

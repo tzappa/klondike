@@ -1,3 +1,4 @@
+/** */
 class Suit {
 	constructor(symbol) {
 		if (symbol === '♥') {
@@ -14,28 +15,8 @@ class Suit {
 		this.symbol = symbol;
 	}
 
-	static get SPADES() {
-		return new Suit('♠');
-	}
-
-	static get HEARTS() {
-		return new Suit('♥');
-	}
-
-	static get DIAMONDS() {
-		return new Suit('♦');
-	}
-
-	static get CLUBS() {
-		return new Suit('♣');
-	}
-
-	isRed() {
-		return this.symbol === '♥' || this.symbol === '♦';
-	}
-
-	isBlack() {
-		return this.symbol === '♠' || this.symbol === '♣';
+	color() {
+		return this.symbol === '♥' || this.symbol === '♦' ? 'red' : 'black';
 	}
 
 	static fromString(suit) {
@@ -43,19 +24,19 @@ class Suit {
 			case 'h':
 			case 'hearts':
 			case '♥':
-				return Suit.HEARTS;
+				return new Suit('♥');
 			case 'd':
 			case 'diamonds':
 			case '♦':
-				return Suit.DIAMONDS;
+				return new Suit('♦');
 			case 'c':
 			case 'clubs':
 			case '♣':
-				return Suit.CLUBS;
+				return new Suit('♣');
 			case 's':
 			case 'spades':
 			case '♠':
-				return Suit.SPADES;
+				return new Suit('♠');
 			default:
 				throw new Error('Invalid suit');
 		}
@@ -86,41 +67,24 @@ class Card {
 	constructor(suit, value, faceUp = true) {
 		this.suit = Suit.fromString(suit);
 		this.value = CardValue.fromString(value);
-		this.isFaceUp = faceUp;
 		this.pile = null;
-
 		this.element = document.createElement('div');
 		this.element.classList.add('card');
-		this.element.classList.add(this.isFaceUp ? this.suit.name.toLowerCase() : 'facedown');
-		this.element.style.left = '0px';
-		this.element.style.top = '0px';
-		this.element.innerHTML = this.toString();
+		faceUp ? this.faceUp() : this.faceDown()
 	}
 
 	faceUp() {
-		if (this.isFaceUp) {
-			return;
-		}
-		this.flip();
+		this.isFaceUp = true;
+		this.element.innerHTML = this.toString();
+		this.element.classList.remove('facedown');
+		this.element.classList.add(this.suit.name.toLowerCase());
 	}
 
 	faceDown() {
-		if (!this.isFaceUp) {
-			return;
-		}
-		this.flip();
-	}
-
-	flip() {
-		this.isFaceUp = !this.isFaceUp;
+		this.isFaceUp = false;
 		this.element.innerHTML = this.toString();
-		if (this.isFaceUp) {
-			this.element.classList.remove('facedown');
-			this.element.classList.add(this.suit.name.toLowerCase());
-		} else {
-			this.element.classList.add('facedown');
-			this.element.classList.remove(this.suit.name.toLowerCase());
-		}
+		this.element.classList.add('facedown');
+		this.element.classList.remove(this.suit.name.toLowerCase());
 	}
 
 	pos(left, top) {
@@ -135,14 +99,11 @@ class Card {
 
 class Deck {
 	constructor(faceUp = false) {
-		this.cards = [];
-		this.faceUp = faceUp;
-		this.initializeDeck();
-	}
-
-	initializeDeck() {
 		const suits = ['♥', '♦', '♣', '♠'];
 		const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+		this.faceUp = faceUp;
+		this.cards = [];
 
 		for (let suit of suits) {
 			for (let value of values) {
@@ -158,13 +119,10 @@ class Deck {
 		}
 	}
 
-	drawCard() {
-		return this.cards.pop();
-	}
-
-	resetDeck() {
-		this.cards = [];
-		this.initializeDeck();
+	drawCard(pile) {
+		let card = this.cards.pop();
+		pile.addCard(card);
+		return card;
 	}
 }
 
@@ -220,7 +178,7 @@ class Pile {
 class Tableau extends Pile {
 	addCard(card) {
 		super.addCard(card);
-		card.pos(0, (this.cards.length - 1) * 20);
+		card.pos(0, (this.cards.length - 1) * 28);
 	}
 }
 
@@ -271,16 +229,16 @@ document.addEventListener('DOMContentLoaded', function() {
 	// add cards to the tableau
 	for (let i = 1; i <= 7; i++) {
 		for (let j = i; j <= 7; j++) {
-			const card = deck.drawCard();
+			const card = deck.drawCard(piles[j - 1]);
+			// turn the last card of the pile face up
 			if (j === i) {
 				card.faceUp();
 			}
-			piles[j - 1].addCard(card);
 		}
 	}
 	// add remaining cards to the draw pile
 	while (deck.cards.length > 0) {
-		drawPile.addCard(deck.drawCard());
+		deck.drawCard(drawPile);
 	}
 
 	// variable to keep track of selected card (only one card can be selected at a time)
@@ -375,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				selectCard(false);
 				return ;
 			}
-			if ((selected.value.rank == card.value.rank - 1) && (selected.suit.isRed() != card.suit.isRed())) {
+			if ((selected.value.rank == card.value.rank - 1) && (selected.suit.color() != card.suit.color())) {
 				moveToPile(pile);
 				return ;
 			}
@@ -394,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				if (!prevCard.isFaceUp) {
 					break;
 				} 
-				if ((prevCard.value.rank == card.value.rank - 1) && (prevCard.suit.isRed() != card.suit.isRed())) {
+				if ((prevCard.value.rank == card.value.rank - 1) && (prevCard.suit.color() != card.suit.color())) {
 					selectCard(false);
 					let index = fromPile.cardIndex(prevCard);
 					console.log(prevCard.toString(), index);

@@ -188,8 +188,17 @@ class Pile {
 
 class Tableau extends Pile {
 	addCard(card) {
+		let lastCard = this.topCard();
 		super.addCard(card);
-		card.pos(0, (this.cardsCount() - 1) * 28);
+		if (lastCard) {
+			if (lastCard.isFaceUp) {
+				card.pos(0, lastCard.element.offsetTop + 28);
+			} else {
+				card.pos(0, lastCard.element.offsetTop + 8);
+			}
+		} else {
+			card.pos(0, 0);
+		}
 	}
 }
 
@@ -197,7 +206,8 @@ class Foundation extends Pile {
 	constructor(suit, parent, id) {
 		super(parent, id);
 		this.suit = Suit.fromString(suit);
-		this.element.innerHTML = this.suit.symbol;
+		this.symbol = this.suit.symbol;
+		this.element.innerHTML = this.symbol;
 		this.element.classList.add('foundation');
 		this.element.classList.add(this.suit.name.toLowerCase());
 	}
@@ -207,7 +217,6 @@ class Foundation extends Pile {
 			throw new Error('The foundation accepts only ' + this.suit.name.toLowerCase());
 		}
 		if (this.isEmpty()) {
-			console.log(card.val);
 			if (card.val != 'A') {
 				throw new Error('The foundation must start with an Ace');
 			}
@@ -289,7 +298,23 @@ document.addEventListener('DOMContentLoaded', function() {
 			moveToPile(foundations[card.suit.name[0]], card);
 		} catch (e) {
 			console.log(e.message);
-		}		
+			return ;
+		}
+		checkWin();
+	}
+
+	function checkWin() {
+		// check all cards are in the foundations
+		let win = true;
+		for (let suit of ['S', 'H', 'D', 'C']) {
+			if (foundations[suit].cardsCount() < 13) {
+				win = false;
+				break;
+			}
+		}
+		if (win) {
+			alert('Congratulations! You won!');
+		}
 	}
 
 	// add click event listener to draw pile
@@ -323,17 +348,16 @@ document.addEventListener('DOMContentLoaded', function() {
 		let pile = piles[i - 1];
 		// single click to select or move a card
 		document.getElementById(`pile${i}`).addEventListener('click', function() {
-			console.log(pile.toString());
 			let card = pile.topCard();
 			// if the pile is empty and selected card is a King
 			if (selected && selected.val === 'K' && pile.isEmpty()) {
 				moveToPile(pile);
 				return ;
 			}
-			if (!card) {
-				return ;
-			}
-			if (!selected) {
+			// if (!card) {
+			// 	return ;
+			// }
+			if (!selected && card) {
 				selectCard(card);
 				return ;
 			}
@@ -345,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				selectCard(false);
 				return ;
 			}
-			if ((selected.rank == card.rank - 1) && (selected.color != card.color)) {
+			if (card && (selected.rank == card.rank - 1) && (selected.color != card.color)) {
 				moveToPile(pile);
 				return ;
 			}
@@ -358,13 +382,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			previousCards.push(selected);
 			let prevCard = selected.previousCard()
 			while (prevCard) {
-				console.log(previousCards.toString())
 				if (!prevCard.isFaceUp) {
-					console.log(prevCard);
 					break;
 				}
 				previousCards.push(prevCard);
-				if (prevCard.rank == card.rank - 1 && prevCard.color != card.color) {
+				if (card && prevCard.rank == card.rank - 1 && prevCard.color != card.color) {
 					// move all the cards to the pile in reverse order
 					for (let c of previousCards.reverse()) {
 						moveToPile(pile, c);
@@ -379,15 +401,28 @@ document.addEventListener('DOMContentLoaded', function() {
 					return ;
 				}
 				prevCard = prevCard.previousCard();
-			}
-			
-			
+			}			
 			selectCard(card);
 		});
 
 		// double click to move a card to the foundation
 		document.getElementById(`pile${i}`).addEventListener('dblclick', function() {
 			moveToFoundation(pile);
+		});
+	}
+
+	// click on top card from the foundaitons
+	for (let suit of ['S', 'H', 'D', 'C']) {
+		document.getElementById(`foundation${suit}`).addEventListener('click', function() {
+			if (selected) {
+				if (selected.symbol == foundations[suit].symbol) {
+					moveToPile(foundations[suit]);
+					checkWin();
+				}
+			} else {
+				let card = foundations[suit].topCard();
+				selectCard(card);
+			}
 		});
 	}
 });

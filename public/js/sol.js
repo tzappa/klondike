@@ -13,12 +13,8 @@ class Suit {
 			throw new Error('Invalid suit');
 		}
 		this.symbol = symbol;
+		this.color = this.symbol === '♥' || this.symbol === '♦' ? 'red' : 'black';
 	}
-
-	color() {
-		return this.symbol === '♥' || this.symbol === '♦' ? 'red' : 'black';
-	}
-
 	static fromString(suit) {
 		switch (suit.toLowerCase()) {
 			case 'h':
@@ -44,18 +40,18 @@ class Suit {
 }
 
 class CardValue {
-	constructor(symbol) {
+	constructor(value) {
 		const validValues = {
 			'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
 			'J': 11, 'Q': 12, 'K': 13, 'A': 1
 		};
 
-		if (!validValues[symbol]) {
+		if (!validValues[value]) {
 			throw new Error('Invalid card value');
 		}
 
-		this.symbol = symbol;
-		this.rank = validValues[symbol];
+		this.value = value;
+		this.rank = validValues[value];
 	}
 
 	static fromString(value) {
@@ -67,6 +63,10 @@ class Card {
 	constructor(suit, value, faceUp = true) {
 		this.suit = Suit.fromString(suit);
 		this.value = CardValue.fromString(value);
+		this.val = this.value.value;
+		this.rank = this.value.rank;
+		this.color = this.suit.color;
+		this.symbol = this.suit.symbol;
 		this.pile = null;
 		this.element = document.createElement('div');
 		this.element.classList.add('card');
@@ -92,8 +92,19 @@ class Card {
 		this.element.style.top = `${top}px`;
 	}
 
+	previousCard() {
+		if (!this.pile) {
+			return null;
+		}
+		let index = this.pile.cardIndex(this);
+		if (index === 0) {
+			return null;
+		}
+		return this.pile.cards[index - 1];
+	}
+
 	toString() {
-		return this.isFaceUp ? `${this.value.symbol}${this.suit.symbol}` : '?';
+		return this.isFaceUp ? `${this.val}${this.symbol}` : '?';
 	}
 }
 
@@ -178,7 +189,7 @@ class Pile {
 class Tableau extends Pile {
 	addCard(card) {
 		super.addCard(card);
-		card.pos(0, (this.cards.length - 1) * 28);
+		card.pos(0, (this.cardsCount() - 1) * 28);
 	}
 }
 
@@ -196,10 +207,11 @@ class Foundation extends Pile {
 			throw new Error('The foundation accepts only ' + this.suit.name.toLowerCase());
 		}
 		if (this.isEmpty()) {
-			if (card.value.symbol != 'A') {
+			console.log(card.val);
+			if (card.val != 'A') {
 				throw new Error('The foundation must start with an Ace');
 			}
-		} else if (this.topCard().value.rank != card.value.rank - 1) {
+		} else if (this.topCard().rank != card.rank - 1) {
 			throw new Error('The foundation must be built in ascending order');
 		}
 		super.addCard(card);
@@ -314,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			console.log(pile.toString());
 			let card = pile.topCard();
 			// if the pile is empty and selected card is a King
-			if (selected && selected.value.symbol === 'K' && pile.isEmpty()) {
+			if (selected && selected.val === 'K' && pile.isEmpty()) {
 				moveToPile(pile);
 				return ;
 			}
@@ -333,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				selectCard(false);
 				return ;
 			}
-			if ((selected.value.rank == card.value.rank - 1) && (selected.suit.color() != card.suit.color())) {
+			if ((selected.rank == card.rank - 1) && (selected.color != card.color)) {
 				moveToPile(pile);
 				return ;
 			}
@@ -342,28 +354,33 @@ document.addEventListener('DOMContentLoaded', function() {
 				return ;
 			}
 			// get the previous card to the selected in the pile
-			let fromPile = selected.pile;
-			let prevCard = selected;
-			while (true) {
-				prevCard = fromPile.cards[fromPile.cards.indexOf(prevCard) - 1];
-				if (!prevCard) {
+			let previousCards = [];
+			previousCards.push(selected);
+			let prevCard = selected.previousCard()
+			while (prevCard) {
+				console.log(previousCards.toString())
+				if (!prevCard.isFaceUp) {
+					console.log(prevCard);
 					break;
 				}
-				if (!prevCard.isFaceUp) {
-					break;
-				} 
-				if ((prevCard.value.rank == card.value.rank - 1) && (prevCard.suit.color() != card.suit.color())) {
-					selectCard(false);
-					let index = fromPile.cardIndex(prevCard);
-					console.log(prevCard.toString(), index);
-					let cards = fromPile.cards.splice(index);
-					for (let c of cards) {
-						console.log(c.toString());
+				previousCards.push(prevCard);
+				if (prevCard.rank == card.rank - 1 && prevCard.color != card.color) {
+					// move all the cards to the pile in reverse order
+					for (let c of previousCards.reverse()) {
 						moveToPile(pile, c);
 					}
+					return ;
 				}
-				break;
+				if (prevCard.val === 'K' && pile.isEmpty()) {
+					// move all the cards to the pile in reverse order
+					for (let c of previousCards.reverse()) {
+						moveToPile(pile, c);
+					}
+					return ;
+				}
+				prevCard = prevCard.previousCard();
 			}
+			
 			
 			selectCard(card);
 		});

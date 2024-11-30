@@ -12,6 +12,8 @@ const Ranks = [
 	{val: 'A', rank: 1}
 ];
 
+const ImgPath = 'img/';
+
 class Card {
 	constructor(suit, value, faceUp = true) {
 		this.suit = suit.symbol;
@@ -20,21 +22,33 @@ class Card {
 		this.val = value.val;
 		this.rank = value.rank;
 		this.pile = null;
-		this.element = document.createElement('div');
+		if (ImgPath) {
+			this.element = document.createElement('img');
+		} else {
+			this.element = document.createElement('div');
+		}
 		this.element.classList.add('card');
 		faceUp ? this.faceUp() : this.faceDown()
 	}
 
 	faceUp() {
 		this.isFaceUp = true;
-		this.element.innerHTML = this.toString();
+		if (ImgPath) {
+			this.element.src = `${ImgPath}${this.val}${this.name[0]}.svg`;
+		} else {
+			this.element.innerHTML = this.toString();
+		}
 		this.element.classList.remove('facedown');
 		this.element.classList.add(this.name);
 	}
 
 	faceDown() {
 		this.isFaceUp = false;
-		this.element.innerHTML = this.toString();
+		if (ImgPath) {
+			this.element.src = `${ImgPath}back.svg`;
+		} else { 
+			this.element.innerHTML = this.toString();
+		}
 		this.element.classList.add('facedown');
 		this.element.classList.remove(this.name);
 	}
@@ -140,9 +154,9 @@ class Tableau extends Pile {
 		super.addCard(card);
 		if (lastCard) {
 			if (lastCard.isFaceUp) {
-				card.pos(0, lastCard.element.offsetTop + 28);
+				card.pos(0, lastCard.element.offsetTop + card.element.offsetHeight / 5);
 			} else {
-				card.pos(0, lastCard.element.offsetTop + 8);
+				card.pos(0, lastCard.element.offsetTop + card.element.offsetHeight / 11);
 			}
 		} else {
 			card.pos(0, 0);

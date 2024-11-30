@@ -119,3 +119,46 @@ body {
 	color: #80917b;
 	background-color: #80917b;
 }
+.game-over {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	justify-content: center;
+	align-items: center;
+	z-index: 1001;
+}
+.game-over>div {
+	background-color: white;
+	padding: 20px;
+	border-radius: 10px;
+	text-align: center;
+	color: black;
+	width: 420px;
+	margin: 120px auto;
+}
+.game-button, a.game-button {
+    font-family: Arial, Verdana, Tahoma;
+    font-size: 1em;
+    padding: 0.2em .4em;
+    border-radius: 6px;
+    border: 1px solid gray;
+    background: #eee;
+    opacity: 0.9;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    color: #000;
+    text-align: center;
+    text-decoration: none;
+    transition-delay: 0s, 0s, 0s, 0s;
+    transition-duration: 0.15s, 0.15s, 0.15s, 0.15s;
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: ease-in-out, ease-in-out, ease-in-out, ease-in-out;
+    vertical-align: middle;
+    line-height: 1.5em;
+}

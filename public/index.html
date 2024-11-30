@@ -7,8 +7,18 @@
 	<link rel="stylesheet" href="./css/sol.css" />
 </head>
 <body>
-	<div id="table"></div>
-
+	<div id="table">
+		<div class="game-over" id="gameOver" style="display:none;">
+			<div>
+				<h2>Congratulations! You won!</h2>
+				<br>
+				<p>Do you want to play again?</p>
+				<br>
+				<button class="game-button" id="gameOverClose">Not now</button>&nbsp;&nbsp;&nbsp;
+				<button class="game-button" id="gameOverStart">Yes!</button>
+			</div>
+		</div>
+	</div>
 	<script src="./js/sol.js"></script>
 </body>
 </html>

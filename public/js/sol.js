@@ -305,7 +305,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 		if (win) {
-			alert('Congratulations! You won!');
+			setTimeout(function() {
+				document.getElementById('gameOver').style.display = 'block';
+			}, 500);
 		}
 	}
 
@@ -380,4 +382,10 @@ document.addEventListener('DOMContentLoaded', function() {
 			moveToFoundation(pile);
 		});
 	}
+	document.getElementById('gameOverClose').addEventListener('click', function() {
+		document.getElementById('gameOver').style.display = 'none';
+	});
+	document.getElementById('gameOverStart').addEventListener('click', function() {
+		location.reload();
+	});
 });

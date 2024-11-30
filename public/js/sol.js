@@ -1,72 +1,24 @@
-/** */
-class Suit {
-	constructor(symbol) {
-		if (symbol === '♥') {
-			this.name = 'Hearts';
-		} else if (symbol === '♦') {
-			this.name = 'Diamonds';
-		} else if (symbol === '♣') {
-			this.name = 'Clubs';
-		} else if (symbol === '♠') {
-			this.name = 'Spades';
-		} else {
-			throw new Error('Invalid suit');
-		}
-		this.symbol = symbol;
-		this.color = this.symbol === '♥' || this.symbol === '♦' ? 'red' : 'black';
-	}
-	static fromString(suit) {
-		switch (suit.toLowerCase()) {
-			case 'h':
-			case 'hearts':
-			case '♥':
-				return new Suit('♥');
-			case 'd':
-			case 'diamonds':
-			case '♦':
-				return new Suit('♦');
-			case 'c':
-			case 'clubs':
-			case '♣':
-				return new Suit('♣');
-			case 's':
-			case 'spades':
-			case '♠':
-				return new Suit('♠');
-			default:
-				throw new Error('Invalid suit');
-		}
-	}
-}
+const Suits = [
+	{symbol: '♠', name: 'spades',   color: 'black'},
+	{symbol: '♥', name: 'hearts',   color: 'red'},
+	{symbol: '♦', name: 'diamonds', color: 'red'},
+	{symbol: '♣', name: 'clubs',    color: 'black'}
+];
 
-class CardValue {
-	constructor(value) {
-		const validValues = {
-			'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
-			'J': 11, 'Q': 12, 'K': 13, 'A': 1
-		};
-
-		if (!validValues[value]) {
-			throw new Error('Invalid card value');
-		}
-
-		this.value = value;
-		this.rank = validValues[value];
-	}
-
-	static fromString(value) {
-		return new CardValue(value);
-	}
-}
+const Ranks = [
+	{val: '2', rank: 2}, {val: '3', rank: 3}, {val: '4', rank: 4}, {val: '5', rank: 5},
+	{val: '6', rank: 6}, {val: '7', rank: 7}, {val: '8', rank: 8}, {val: '9', rank: 9},
+	{val: '10', rank: 10}, {val: 'J', rank: 11}, {val: 'Q', rank: 12}, {val: 'K', rank: 13},
+	{val: 'A', rank: 1}
+];
 
 class Card {
 	constructor(suit, value, faceUp = true) {
-		this.suit = Suit.fromString(suit);
-		this.value = CardValue.fromString(value);
-		this.val = this.value.value;
-		this.rank = this.value.rank;
-		this.color = this.suit.color;
-		this.symbol = this.suit.symbol;
+		this.suit = suit.symbol;
+		this.color = suit.color;
+		this.name = suit.name;
+		this.val = value.val;
+		this.rank = value.rank;
 		this.pile = null;
 		this.element = document.createElement('div');
 		this.element.classList.add('card');
@@ -77,14 +29,14 @@ class Card {
 		this.isFaceUp = true;
 		this.element.innerHTML = this.toString();
 		this.element.classList.remove('facedown');
-		this.element.classList.add(this.suit.name.toLowerCase());
+		this.element.classList.add(this.name);
 	}
 
 	faceDown() {
 		this.isFaceUp = false;
 		this.element.innerHTML = this.toString();
 		this.element.classList.add('facedown');
-		this.element.classList.remove(this.suit.name.toLowerCase());
+		this.element.classList.remove(this.name);
 	}
 
 	pos(left, top) {
@@ -104,21 +56,17 @@ class Card {
 	}
 
 	toString() {
-		return this.isFaceUp ? `${this.val}${this.symbol}` : '?';
+		return this.isFaceUp ? `${this.val}${this.suit}` : '?';
 	}
 }
 
 class Deck {
 	constructor(faceUp = false) {
-		const suits = ['♥', '♦', '♣', '♠'];
-		const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-
 		this.faceUp = faceUp;
 		this.cards = [];
-
-		for (let suit of suits) {
-			for (let value of values) {
-				this.cards.push(new Card(suit, value, this.faceUp));
+		for (let suit of Suits) {
+			for (let rank of Ranks) {
+				this.cards.push(new Card(suit, rank, this.faceUp));
 			}
 		}
 	}
@@ -203,18 +151,19 @@ class Tableau extends Pile {
 }
 
 class Foundation extends Pile {
-	constructor(suit, parent, id) {
+	constructor(suit, parent) {
+		let id = `foundation-${suit.name}`;
 		super(parent, id);
-		this.suit = Suit.fromString(suit);
-		this.symbol = this.suit.symbol;
-		this.element.innerHTML = this.symbol;
+		this.name = suit.name;
+		this.suit = suit.symbol;
+		this.element.innerHTML = this.suit;
 		this.element.classList.add('foundation');
-		this.element.classList.add(this.suit.name.toLowerCase());
+		this.element.classList.add(this.name);
 	}
 
 	addCard(card) {
-		if (card.suit == this.suit) {
-			throw new Error('The foundation accepts only ' + this.suit.name.toLowerCase());
+		if (card.suit !== this.suit) {
+			throw new Error(`The foundation accepts only ${this.name}`);
 		}
 		if (this.isEmpty()) {
 			if (card.val != 'A') {
@@ -231,18 +180,57 @@ class Foundation extends Pile {
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
 	const drawPile = new Pile(table, 'drawPile');
+	// add click event listener to draw pile
+	drawPile.element.addEventListener('click', function() {
+		selectCard(false);
+		// no more cards to draw
+		if (drawPile.isEmpty()) {
+			while (!discardPile.isEmpty()) {
+				let card = discardPile.topCard();
+				card.faceDown();
+				drawPile.addCard(card);
+			}
+			return ;
+		} 
+		let card = drawPile.topCard();
+		card.faceUp();
+		discardPile.addCard(card);
+	});
 	const discardPile = new Pile(table, 'discardPile');
+	discardPile.element.addEventListener('click', function() {
+		selectCard(discardPile.topCard());
+	});
+	// add a double click event listener to the discard pile - move the card to foundation
+	discardPile.element.addEventListener('dblclick', function() {
+		moveToFoundation(discardPile);
+	});
 	// create a foundation for each suit
-	let foundations = {};
-	for (let suit of ['S', 'H', 'D', 'C']) {
-		const foundation = new Foundation(suit, table, `foundation${suit[0]}`);
-		foundations[suit] = foundation;
+	let foundations = [];
+	for (let suit of Suits) {
+		const foundation = new Foundation(suit, table);
+		// add click event listener to the foundation
+		foundation.element.addEventListener('click', function() {
+			if (selected) {
+				if (selected === foundation.topCard()) {
+					selectCard(false);
+				} else if (selected.suit == suit.symbol) {
+					moveToPile(foundation);
+					checkWin();
+				}
+			} else {
+				let card = foundation.topCard();
+				if (card && card.val != 'A') {
+					selectCard(card);
+				}
+			}
+		});
+		foundations.push(foundation);
 	}
 	// create a 7 pile tableau
 	let piles = [];
 	for (let i = 1; i <= 7; i++) {
-		const t = new Tableau(table, `pile${i}`);
-		piles.push(t);
+		const tableau = new Tableau(table, `pile${i}`);
+		piles.push(tableau);
 	}
 	// create a deck
 	const deck = new Deck();
@@ -288,17 +276,21 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	function moveToFoundation(pile) {
+	function moveToFoundation(fromPile) {
 		selectCard(false);
-		let card = pile.topCard();
+		let card = fromPile.topCard();
 		if (!card) {
 			return;
 		}
-		try {
-			moveToPile(foundations[card.suit.name[0]], card);
-		} catch (e) {
-			console.log(e.message);
-			return ;
+		for (let foundation of foundations) {
+			if (foundation.suit == card.suit) {
+				try {
+					moveToPile(foundation, card);
+					break;
+				} catch (e) {
+					console.log(e.message);
+				}
+			}
 		}
 		checkWin();
 	}
@@ -306,8 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	function checkWin() {
 		// check all cards are in the foundations
 		let win = true;
-		for (let suit of ['S', 'H', 'D', 'C']) {
-			if (foundations[suit].cardsCount() < 13) {
+		for (let foundation of foundations) {
+			if (foundation.cardsCount() < 13) {
 				win = false;
 				break;
 			}
@@ -316,32 +308,6 @@ document.addEventListener('DOMContentLoaded', function() {
 			alert('Congratulations! You won!');
 		}
 	}
-
-	// add click event listener to draw pile
-	document.getElementById('drawPile').addEventListener('click', function() {
-		selectCard(false);
-		// no more cards to draw
-		if (drawPile.isEmpty()) {
-			while (!discardPile.isEmpty()) {
-				let card = discardPile.topCard();
-				card.faceDown();
-				drawPile.addCard(card);
-			}
-			return ;
-		} 
-		let card = drawPile.topCard();
-		card.faceUp();
-		discardPile.addCard(card);
-	});
-
-	document.getElementById('discardPile').addEventListener('click', function() {
-		selectCard(discardPile.topCard());
-	});
-
-	// add a double click event listener to the discard pile - move the card to foundation
-	document.getElementById('discardPile').addEventListener('dblclick', function() {
-		moveToFoundation(discardPile);
-	});
 
 	// add click event listener to the tableau piles
 	for (let i = 1; i <= 7; i++) {
@@ -354,9 +320,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				moveToPile(pile);
 				return ;
 			}
-			// if (!card) {
-			// 	return ;
-			// }
 			if (!selected && card) {
 				selectCard(card);
 				return ;
@@ -375,6 +338,14 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 			// no moving more than one card from the discard pile
 			if (selected.pile == discardPile) {
+				return ;
+			}
+			if (!selected) {
+				selectCard(card);
+				return ;
+			}
+			// no moving more than one card from the draw. discard or foundation piles
+			if (selected.pile == discardPile || selected.pile instanceof Foundation) {
 				return ;
 			}
 			// get the previous card to the selected in the pile
@@ -402,27 +373,11 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 				prevCard = prevCard.previousCard();
 			}			
-			selectCard(card);
 		});
 
 		// double click to move a card to the foundation
 		document.getElementById(`pile${i}`).addEventListener('dblclick', function() {
 			moveToFoundation(pile);
-		});
-	}
-
-	// click on top card from the foundaitons
-	for (let suit of ['S', 'H', 'D', 'C']) {
-		document.getElementById(`foundation${suit}`).addEventListener('click', function() {
-			if (selected) {
-				if (selected.symbol == foundations[suit].symbol) {
-					moveToPile(foundations[suit]);
-					checkWin();
-				}
-			} else {
-				let card = foundations[suit].topCard();
-				selectCard(card);
-			}
 		});
 	}
 });

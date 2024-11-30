@@ -18,16 +18,16 @@ body {
 #discardPile {
 	grid-area: 1/2/2/3;
 }
-#foundationS {
+#foundation-spades {
 	grid-area: 1/4/2/5;
 }
-#foundationH {
+#foundation-hearts {
 	grid-area: 1/5/2/6;
 }
-#foundationD {
+#foundation-diamonds {
 	grid-area: 1/6/2/7;
 }
-#foundationC {
+#foundation-clubs {
 	grid-area: 1/7/2/8;
 }
 #pile1 {

@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 		if (win) {
 			setTimeout(function() {
-				document.getElementById('gameOver').style.display = 'block';
+				document.getElementById('gameOver').style.display = 'flex';
 			}, 500);
 		}
 	}
@@ -354,14 +354,12 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 			// no moving more than one card from the discard pile
 			if (selected.pile == discardPile) {
-				return ;
-			}
-			if (!selected) {
-				selectCard(card);
+				selectCard(false);
 				return ;
 			}
 			// no moving more than one card from the draw. discard or foundation piles
 			if (selected.pile == discardPile || selected.pile instanceof Foundation) {
+				selectCard(false);
 				return ;
 			}
 			// get the previous card to the selected in the pile
@@ -388,7 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
 					return ;
 				}
 				prevCard = prevCard.previousCard();
-			}			
+			}
+			selectCard(false);	
 		});
 
 		// double click to move a card to the foundation

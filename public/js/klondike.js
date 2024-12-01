@@ -4,23 +4,15 @@ const Suits = [
 	{symbol: '♦', name: 'diamonds', color: 'red'},
 	{symbol: '♣', name: 'clubs',    color: 'black'}
 ];
-
-const Ranks = [
-	{val: '2', rank: 2}, {val: '3', rank: 3}, {val: '4', rank: 4}, {val: '5', rank: 5},
-	{val: '6', rank: 6}, {val: '7', rank: 7}, {val: '8', rank: 8}, {val: '9', rank: 9},
-	{val: '10', rank: 10}, {val: 'J', rank: 11}, {val: 'Q', rank: 12}, {val: 'K', rank: 13},
-	{val: 'A', rank: 1}
-];
-
+const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const ImgPath = 'img/';
 
 class Card {
-	constructor(suit, value, faceUp = true) {
+	constructor(suit, rank, faceUp = true) {
 		this.suit = suit.symbol;
 		this.color = suit.color;
 		this.name = suit.name;
-		this.val = value.val;
-		this.rank = value.rank;
+		this.rank = rank;
 		this.pile = null;
 		if (ImgPath) {
 			this.element = document.createElement('img');
@@ -34,7 +26,7 @@ class Card {
 	faceUp() {
 		this.isFaceUp = true;
 		if (ImgPath) {
-			this.element.src = `${ImgPath}${this.val}${this.name[0]}.svg`;
+			this.element.src = `${ImgPath}${this.rank}${this.name[0]}.svg`;
 		} else {
 			this.element.innerHTML = this.toString();
 		}
@@ -70,7 +62,7 @@ class Card {
 	}
 
 	toString() {
-		return this.isFaceUp ? `${this.val}${this.suit}` : '?';
+		return this.isFaceUp ? `${this.rank}${this.suit}` : '?';
 	}
 }
 
@@ -180,10 +172,10 @@ class Foundation extends Pile {
 			throw new Error(`The foundation accepts only ${this.name}`);
 		}
 		if (this.isEmpty()) {
-			if (card.val != 'A') {
+			if (card.rank != 'A') {
 				throw new Error('The foundation must start with an Ace');
 			}
-		} else if (this.topCard().rank != card.rank - 1) {
+		} else if (Ranks.indexOf(this.topCard().rank) != Ranks.indexOf(card.rank) - 1) {
 			throw new Error('The foundation must be built in ascending order');
 		}
 		super.addCard(card);
@@ -233,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 			} else {
 				let card = foundation.topCard();
-				if (card && card.val != 'A') {
+				if (card && card.rank != 'A') {
 					selectCard(card);
 				}
 			}
@@ -332,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		document.getElementById(`pile${i}`).addEventListener('click', function() {
 			let card = pile.topCard();
 			// if the pile is empty and selected card is a King
-			if (selected && selected.val === 'K' && pile.isEmpty()) {
+			if (selected && selected.rank === 'K' && pile.isEmpty()) {
 				moveToPile(pile);
 				return ;
 			}
@@ -348,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				selectCard(false);
 				return ;
 			}
-			if (card && (selected.rank == card.rank - 1) && (selected.color != card.color)) {
+			if (card && (Ranks.indexOf(selected.rank) == Ranks.indexOf(card.rank) - 1) && (selected.color != card.color)) {
 				moveToPile(pile);
 				return ;
 			}
@@ -371,14 +363,14 @@ document.addEventListener('DOMContentLoaded', function() {
 					break;
 				}
 				previousCards.push(prevCard);
-				if (card && prevCard.rank == card.rank - 1 && prevCard.color != card.color) {
+				if (card && Ranks.indexOf(prevCard.rank) == Ranks.indexOf(card.rank) - 1 && prevCard.color != card.color) {
 					// move all the cards to the pile in reverse order
 					for (let c of previousCards.reverse()) {
 						moveToPile(pile, c);
 					}
 					return ;
 				}
-				if (prevCard.val === 'K' && pile.isEmpty()) {
+				if (prevCard.rank === 'K' && pile.isEmpty()) {
 					// move all the cards to the pile in reverse order
 					for (let c of previousCards.reverse()) {
 						moveToPile(pile, c);

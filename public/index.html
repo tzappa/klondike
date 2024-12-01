@@ -7,17 +7,19 @@
 	<link rel="stylesheet" href="./css/klondike.css" />
 </head>
 <body>
-	<div class="game-over" id="gameOver" style="display:none;">
-		<div>
-			<h2>Congratulations! You won!</h2>
-			<p>Do you want to play again?</p>
-			<br>
-			<button class="game-button" id="gameOverClose">Not now</button>&nbsp;&nbsp;&nbsp;
-			<button class="game-button" id="gameOverStart">Yes!</button>
+	<main class="klondike">
+		<h1>Klondike Solitaire</h1>
+		<div id="table"></div>
+		<div class="game-over" id="gameOver" style="display:none;">
+			<div>
+				<div class="card-title">Congratulations! You won!</div>
+				<p>Do you want to play again?</p>
+				<br>
+				<button class="game-button" id="gameOverClose">Not now</button>&nbsp;&nbsp;&nbsp;
+				<button class="game-button" id="gameOverStart">Yes!</button>
+			</div>
 		</div>
-	</div>
-	<div id="table">
-	</div>
+	</main>
 	<script src="./js/klondike.js"></script>
 </body>
 </html>

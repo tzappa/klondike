@@ -100,6 +100,14 @@ class Pile {
 		this.element.classList.add('pile');
 		parent.appendChild(this.element);
 	}
+	
+	onClick(callback) {
+		this.element.addEventListener('click', callback);
+	}
+
+	onDblClick(callback) {
+		this.element.addEventListener('dblclick', callback);
+	}
 
 	addCard(card) {
 		if (card.pile) {
@@ -183,11 +191,25 @@ class Foundation extends Pile {
 	}
 }
 
+class DrawPile extends Pile {
+	constructor(parent) {
+		super(parent, 'drawPile');
+		this.element.classList.add('drawPile');
+	}
+}
+
+class DiscardPile extends Pile {
+	constructor(parent) {
+		super(parent, 'discardPile');
+		this.element.classList.add('discardPile');
+	}
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
-	const drawPile = new Pile(table, 'drawPile');
-	// add click event listener to draw pile
-	drawPile.element.addEventListener('click', function() {
+	const drawPile = new DrawPile(table);
+	const discardPile = new DiscardPile(table);
+	drawPile.onClick(function() {
 		selectCard(false);
 		// no more cards to draw
 		if (drawPile.isEmpty()) {
@@ -202,12 +224,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		card.faceUp();
 		discardPile.addCard(card);
 	});
-	const discardPile = new Pile(table, 'discardPile');
-	discardPile.element.addEventListener('click', function() {
+	discardPile.onClick(function() {
 		selectCard(discardPile.topCard());
 	});
 	// add a double click event listener to the discard pile - move the card to foundation
-	discardPile.element.addEventListener('dblclick', function() {
+	discardPile.onDblClick(function() {
 		moveToFoundation(discardPile);
 	});
 	// create a foundation for each suit
@@ -215,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	for (let suit of Suits) {
 		const foundation = new Foundation(suit, table);
 		// add click event listener to the foundation
-		foundation.element.addEventListener('click', function() {
+		foundation.onClick(function() {
 			if (selected) {
 				if (selected === foundation.topCard()) {
 					selectCard(false);
@@ -321,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	for (let i = 1; i <= 7; i++) {
 		let pile = piles[i - 1];
 		// single click to select or move a card
-		document.getElementById(`pile${i}`).addEventListener('click', function() {
+		pile.onClick(function() {
 			let card = pile.topCard();
 			// if the pile is empty and selected card is a King
 			if (selected && selected.rank === 'K' && pile.isEmpty()) {
@@ -383,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 
 		// double click to move a card to the foundation
-		document.getElementById(`pile${i}`).addEventListener('dblclick', function() {
+		pile.onDblClick(function() {
 			moveToFoundation(pile);
 		});
 	}

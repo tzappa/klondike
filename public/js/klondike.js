@@ -5,7 +5,9 @@ const Suits = [
 	{symbol: '♣', name: 'clubs',    color: 'black'}
 ];
 const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const ImgPath = 'img/';
+const UseImages = true;
+let imgPath = 'img/';
+let imgExt = '.png';
 
 class Card {
 	constructor(suit, rank, faceUp = true) {
@@ -14,7 +16,7 @@ class Card {
 		this.name = suit.name;
 		this.rank = rank;
 		this.pile = null;
-		if (ImgPath) {
+		if (UseImages) {
 			this.element = document.createElement('img');
 		} else {
 			this.element = document.createElement('div');
@@ -25,8 +27,8 @@ class Card {
 
 	faceUp() {
 		this.isFaceUp = true;
-		if (ImgPath) {
-			this.element.src = `${ImgPath}${this.rank}${this.name[0]}.svg`;
+		if (UseImages) {
+			this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
 		} else {
 			this.element.innerHTML = this.toString();
 		}
@@ -36,8 +38,8 @@ class Card {
 
 	faceDown() {
 		this.isFaceUp = false;
-		if (ImgPath) {
-			this.element.src = `${ImgPath}back.svg`;
+		if (imgPath) {
+			this.element.src = `${imgPath}back${imgExt}`;
 		} else { 
 			this.element.innerHTML = this.toString();
 		}
@@ -92,11 +94,10 @@ class Deck {
 }
 
 class Pile {
-	constructor(parent, id) {
+	constructor(parent) {
 		this.cards = [];
 
 		this.element = document.createElement('div');
-		this.element.id = id;
 		this.element.classList.add('pile');
 		parent.appendChild(this.element);
 	}
@@ -149,6 +150,11 @@ class Pile {
 }
 
 class Tableau extends Pile {
+	constructor(parent, id) {
+		super(parent);
+		this.element.id = id;
+	}
+
 	addCard(card) {
 		let lastCard = this.topCard();
 		super.addCard(card);
@@ -165,9 +171,10 @@ class Tableau extends Pile {
 }
 
 class Foundation extends Pile {
-	constructor(suit, parent) {
-		let id = `foundation-${suit.name}`;
-		super(parent, id);
+	constructor(parent, suit) {
+		super(parent);
+
+		this.element.id = `foundation-${suit.name}`;
 		this.name = suit.name;
 		this.suit = suit.symbol;
 		this.element.innerHTML = this.suit;
@@ -193,20 +200,32 @@ class Foundation extends Pile {
 
 class DrawPile extends Pile {
 	constructor(parent) {
-		super(parent, 'drawPile');
+		super(parent);
+		this.element.id = 'drawPile';
 		this.element.classList.add('drawPile');
 	}
 }
 
 class DiscardPile extends Pile {
 	constructor(parent) {
-		super(parent, 'discardPile');
+		super(parent);
+		this.element.id = 'discardPile';
 		this.element.classList.add('discardPile');
 	}
 }
 
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
+	console.log(table.offsetWidth);
+	if (UseImages) {
+		if (table.offsetWidth < 500) {
+			imgPath += 'compact/';
+			imgExt = '.png';
+		} else {
+			imgPath += 'set6/';
+			imgExt = '.svg';
+		}
+	}
 	const drawPile = new DrawPile(table);
 	const discardPile = new DiscardPile(table);
 	drawPile.onClick(function() {
@@ -234,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	// create a foundation for each suit
 	let foundations = [];
 	for (let suit of Suits) {
-		const foundation = new Foundation(suit, table);
+		const foundation = new Foundation(table, suit);
 		// add click event listener to the foundation
 		foundation.onClick(function() {
 			if (selected) {

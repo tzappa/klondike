@@ -8,6 +8,7 @@ const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 const UseImages = true;
 let imgPath = 'img/';
 let imgExt = '.png';
+let space = 30; // space between 2 consecutive cards in a tableau pile
 
 class Card {
 	constructor(suit, rank, faceUp = true) {
@@ -160,9 +161,9 @@ class Tableau extends Pile {
 		super.addCard(card);
 		if (lastCard) {
 			if (lastCard.isFaceUp) {
-				card.pos(0, lastCard.element.offsetTop + card.element.offsetHeight / 5);
+				card.pos(0, lastCard.element.offsetTop + space);
 			} else {
-				card.pos(0, lastCard.element.offsetTop + card.element.offsetHeight / 11);
+				card.pos(0, lastCard.element.offsetTop + space / 2);
 			}
 		} else {
 			card.pos(0, 0);
@@ -216,14 +217,15 @@ class DiscardPile extends Pile {
 
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
-	console.log(table.offsetWidth);
 	if (UseImages) {
 		if (table.offsetWidth < 500) {
 			imgPath += 'compact/';
 			imgExt = '.png';
+			space = table.offsetWidth / 8 / 2;
 		} else {
 			imgPath += 'set6/';
 			imgExt = '.svg';
+			space = table.offsetWidth / 8 / 3.3;
 		}
 	}
 	const drawPile = new DrawPile(table);

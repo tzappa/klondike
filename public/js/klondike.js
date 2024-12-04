@@ -5,7 +5,6 @@ const Suits = [
 	{symbol: '♣', name: 'clubs',    color: 'black'}
 ];
 const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const UseImages = true;
 let imgPath = 'img/';
 let imgExt = '.png';
 let space = 30; // space between 2 consecutive cards in a tableau pile
@@ -17,22 +16,15 @@ class Card {
 		this.name = suit.name;
 		this.rank = rank;
 		this.pile = null;
-		if (UseImages) {
-			this.element = document.createElement('img');
-		} else {
-			this.element = document.createElement('div');
-		}
+		this.element = document.createElement('img');
 		this.element.classList.add('card');
 		faceUp ? this.faceUp() : this.faceDown()
 	}
 
 	faceUp() {
 		this.isFaceUp = true;
-		if (UseImages) {
-			this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
-		} else {
-			this.element.innerHTML = this.toString();
-		}
+		this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
+		this.element.alt = `${this.rank}${this.suit}`;
 		this.element.classList.remove('facedown');
 		this.element.classList.add(this.name);
 	}
@@ -40,7 +32,9 @@ class Card {
 	faceDown() {
 		this.isFaceUp = false;
 		if (imgPath) {
-			this.element.src = `${imgPath}back${imgExt}`;
+			// this.element.src = `${imgPath}back${imgExt}`;
+			this.element.src = `${imgPath}back.png`;
+			this.element.alt = '';
 		} else { 
 			this.element.innerHTML = this.toString();
 		}
@@ -217,16 +211,14 @@ class DiscardPile extends Pile {
 
 document.addEventListener('DOMContentLoaded', function() {
 	const table = document.getElementById('table');
-	if (UseImages) {
-		if (table.offsetWidth < 500) {
-			imgPath += 'compact/';
-			imgExt = '.png';
-			space = table.offsetWidth / 8 / 2;
-		} else {
-			imgPath += 'set6/';
-			imgExt = '.svg';
-			space = table.offsetWidth / 8 / 3.3;
-		}
+	if (table.offsetWidth < 500) {
+		imgPath += 'compact/';
+		imgExt = '.png';
+		space = table.offsetWidth / 8 / 2;
+	} else {
+		imgPath += 'set6/';
+		imgExt = '.svg';
+		space = table.offsetWidth / 8 / 3.3;
 	}
 	const drawPile = new DrawPile(table);
 	const discardPile = new DiscardPile(table);

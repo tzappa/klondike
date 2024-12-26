@@ -275,6 +275,17 @@ document.addEventListener('DOMContentLoaded', function() {
 	// create a deck
 	const deck = new Deck();
 	deck.shuffle();
+
+	// Create a new temporary Pile to preload the cards *face up*.
+	const preloadPile = new Pile(table);
+	for (let i = 0; i < deck.cards.length; i++) {
+		deck.cards[i].faceUp();
+		preloadPile.addCard(deck.cards[i]);
+		deck.cards[i].faceDown();
+	}
+	// Remove the temporary Pile.
+	table.removeChild(preloadPile.element);
+
 	// add cards to the tableau
 	for (let i = 1; i <= 7; i++) {
 		for (let j = i; j <= 7; j++) {
@@ -427,4 +438,52 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById('gameOverStart').addEventListener('click', function() {
 		location.reload();
 	});
+
+	const buttonsDiv = document.createElement('div');
+	buttonsDiv.id = 'game-buttons';
+	table.appendChild(buttonsDiv);
+
+	// Button to auto move cards to the foundation
+	const autoMoveBtn = document.createElement('button');
+	autoMoveBtn.id = 'autoMove';
+	autoMoveBtn.classList.add('game-button');
+	autoMoveBtn.textContent = 'Auto Move';
+	buttonsDiv.appendChild(autoMoveBtn);
+	autoMoveBtn.addEventListener('click', autoMoveToFoundation);
+	function autoMoveToFoundation() {
+		for (let pile of piles) {
+			let card = pile.topCard();
+			if (card) {
+				foundations.forEach(function(foundation) {
+					if (card.suit == foundation.suit) {
+						if (card.rank == 'A') {
+							moveToPile(foundation, card);
+							setTimeout(autoMoveToFoundation, 220);
+							return ;
+						} else if (foundation.topCard() && Ranks.indexOf(foundation.topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+							moveToPile(foundation, card);
+							setTimeout(autoMoveToFoundation, 220);
+							return ;
+						}
+					}
+				});
+			}
+		}
+		let card = discardPile.topCard();
+		if (card) {
+			foundations.forEach(function(foundation) {
+				if (card.suit == foundation.suit) {
+					if (card.rank == 'A') {
+						moveToPile(foundation, card);
+						setTimeout(autoMoveToFoundation, 220);
+						return ;
+					} else if (foundation.topCard() && Ranks.indexOf(foundation.topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+						moveToPile(foundation, card);
+						setTimeout(autoMoveToFoundation, 220);
+						return ;
+					}
+				}
+			});
+		}
+	}
 });

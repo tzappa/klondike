@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 			}
 		});
-		foundations.push(foundation);
+		foundations[suit.name] = foundation;
 	}
 	// create a 7 pile tableau
 	let piles = [];
@@ -333,15 +333,10 @@ document.addEventListener('DOMContentLoaded', function() {
 		if (!card) {
 			return;
 		}
-		for (let foundation of foundations) {
-			if (foundation.suit == card.suit) {
-				try {
-					moveToPile(foundation, card);
-					break;
-				} catch (e) {
-					console.log(e.message);
-				}
-			}
+		try {
+			moveToPile(foundations[card.name], card);
+		} catch (e) {
+			console.log(e.message);
 		}
 		checkWin();
 	}
@@ -349,8 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	function checkWin() {
 		// check all cards are in the foundations
 		let win = true;
-		for (let foundation of foundations) {
-			if (foundation.cardsCount() < 13) {
+		for (let suit of Suits) {
+			if (foundations[suit.name].cardsCount() < 13) {
 				win = false;
 				break;
 			}
@@ -454,36 +449,28 @@ document.addEventListener('DOMContentLoaded', function() {
 		for (let pile of piles) {
 			let card = pile.topCard();
 			if (card) {
-				foundations.forEach(function(foundation) {
-					if (card.suit == foundation.suit) {
-						if (card.rank == 'A') {
-							moveToPile(foundation, card);
-							setTimeout(autoMoveToFoundation, 220);
-							return ;
-						} else if (foundation.topCard() && Ranks.indexOf(foundation.topCard().rank) == Ranks.indexOf(card.rank) - 1) {
-							moveToPile(foundation, card);
-							setTimeout(autoMoveToFoundation, 220);
-							return ;
-						}
-					}
-				});
+				if (card.rank == 'A') {
+					moveToFoundation(pile);
+					setTimeout(autoMoveToFoundation, 220);
+					return ;
+				} else if (foundations[card.name].topCard() && Ranks.indexOf(foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+					moveToFoundation(pile);
+					setTimeout(autoMoveToFoundation, 220);
+					return ;
+				}
 			}
 		}
 		let card = discardPile.topCard();
 		if (card) {
-			foundations.forEach(function(foundation) {
-				if (card.suit == foundation.suit) {
-					if (card.rank == 'A') {
-						moveToPile(foundation, card);
-						setTimeout(autoMoveToFoundation, 220);
-						return ;
-					} else if (foundation.topCard() && Ranks.indexOf(foundation.topCard().rank) == Ranks.indexOf(card.rank) - 1) {
-						moveToPile(foundation, card);
-						setTimeout(autoMoveToFoundation, 220);
-						return ;
-					}
-				}
-			});
+			if (card.rank == 'A') {
+				moveToFoundation(discardPile);
+				setTimeout(autoMoveToFoundation, 220);
+				return ;
+			} else if (foundations[card.name].topCard() && Ranks.indexOf(foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+				moveToFoundation(discardPile);
+				setTimeout(autoMoveToFoundation, 220);
+				return ;
+			}
 		}
 	}
 });

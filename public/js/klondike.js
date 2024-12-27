@@ -6,8 +6,8 @@ const Suits = [
 ];
 const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 let imgPath = 'img/';
-let imgExt = '.png';
-let space = 30; // space between 2 consecutive cards in a tableau pile
+let imgExt;
+let space; // space between 2 consecutive cards in a tableau pile
 
 class Card {
 	constructor(suit, rank, faceUp = true) {
@@ -32,10 +32,9 @@ class Card {
 	faceDown() {
 		this.isFaceUp = false;
 		if (imgPath) {
-			// this.element.src = `${imgPath}back${imgExt}`;
 			this.element.src = `${imgPath}back.png`;
 			this.element.alt = '';
-		} else { 
+		} else {
 			this.element.innerHTML = this.toString();
 		}
 		this.element.classList.add('facedown');
@@ -63,64 +62,29 @@ class Card {
 	}
 }
 
-class Deck {
-	constructor(faceUp = false) {
-		this.faceUp = faceUp;
+class Stack {
+	constructor() {
 		this.cards = [];
-		for (let suit of Suits) {
-			for (let rank of Ranks) {
-				this.cards.push(new Card(suit, rank, this.faceUp));
-			}
-		}
-	}
-
-	shuffle() {
-		for (let i = this.cards.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-		}
-	}
-
-	drawCard(pile) {
-		let card = this.cards.pop();
-		pile.addCard(card);
-		return card;
-	}
-}
-
-class Pile {
-	constructor(parent) {
-		this.cards = [];
-
-		this.element = document.createElement('div');
-		this.element.classList.add('pile');
-		parent.appendChild(this.element);
-	}
-	
-	onClick(callback) {
-		this.element.addEventListener('click', callback);
-	}
-
-	onDblClick(callback) {
-		this.element.addEventListener('dblclick', callback);
 	}
 
 	addCard(card) {
-		if (card.pile) {
-			card.pile._removeCard(card);
-		}
 		this.cards.push(card);
-		this.element.appendChild(card.element);
-		card.pile = this;
 	}
 
-	_removeCard(card) {
-		let index = this.cards.indexOf(card);
+	removeCard(card) {
+		let index = this.cardIndex(card);
 		if (index === -1) {
 			throw new Error('Card not found');
 		}
 		this.cards.splice(index, 1);
-		this.element.removeChild(card.element);
+	}
+
+	drawCard() {
+		return this.cards.pop();
+	}
+
+	isEmpty() {
+		return this.cards.length === 0;
 	}
 
 	cardsCount() {
@@ -135,12 +99,75 @@ class Pile {
 		return this.cards.indexOf(card);
 	}
 
-	isEmpty() {
-		return this.cardsCount() === 0;
+	shuffle() {
+		for (let i = this.cards.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+		}
 	}
 
 	toString() {
 		return this.cards.map(card => card.toString()).join(' ');
+	}
+}
+
+class Deck extends Stack {
+	constructor(faceUp = false) {
+		super();
+		this.deckCards = [];
+		for (let suit of Suits) {
+			for (let rank of Ranks) {
+				let card = new Card(suit, rank, faceUp);
+				this.addCard(card);
+				this.deckCards.push(card);
+			}
+		}
+	}
+
+	drawCard(pile) {
+		let card = super.drawCard();
+		pile.addCard(card);
+		return card;
+	}
+
+	reset() {
+		for (let card of this.deckCards) {
+			card.pile.removeCard(card);
+			card.faceDown();
+			this.addCard(card);
+		}
+	}
+}
+
+class Pile extends Stack {
+	constructor(parent) {
+		super();
+		this.element = document.createElement('div');
+		this.element.classList.add('pile');
+		parent.appendChild(this.element);
+	}
+
+	onClick(callback) {
+		this.element.addEventListener('click', callback);
+	}
+
+	onDblClick(callback) {
+		this.element.addEventListener('dblclick', callback);
+	}
+
+	addCard(card) {
+		if (card.pile) {
+			card.pile.removeCard(card);
+		}
+		this.cards.push(card);
+		this.element.appendChild(card.element);
+		card.pile = this;
+	}
+
+	removeCard(card) {
+		super.removeCard(card);
+		card.pile = null;
+		this.element.removeChild(card.element);
 	}
 }
 
@@ -199,6 +226,12 @@ class DrawPile extends Pile {
 		this.element.id = 'drawPile';
 		this.element.classList.add('drawPile');
 	}
+
+	addCard(card) {
+		super.addCard(card);
+		card.faceDown();
+		card.pos(0, 0);
+	}
 }
 
 class DiscardPile extends Pile {
@@ -207,9 +240,34 @@ class DiscardPile extends Pile {
 		this.element.id = 'discardPile';
 		this.element.classList.add('discardPile');
 	}
+
+	addCard(card) {
+		super.addCard(card);
+		card.faceUp();
+		card.pos(0, 0);
+	}
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+	function startGame() {
+		document.getElementById('gameOver').style.display = 'none';
+		deck.shuffle();
+		// add cards to the tableau
+		for (let i = 1; i <= 7; i++) {
+			for (let j = i; j <= 7; j++) {
+				const card = deck.drawCard(piles[j - 1]);
+				// turn the last card of the pile face up
+				if (j === i) {
+					card.faceUp();
+				}
+			}
+		}
+		// add remaining cards to the draw pile
+		while (deck.cards.length > 0) {
+			deck.drawCard(drawPile);
+		}
+	}
+
 	const table = document.getElementById('table');
 	if (table.offsetWidth < 500) {
 		imgPath += 'compact/';
@@ -232,9 +290,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				drawPile.addCard(card);
 			}
 			return ;
-		} 
+		}
 		let card = drawPile.topCard();
-		card.faceUp();
 		discardPile.addCard(card);
 	});
 	discardPile.onClick(function() {
@@ -274,8 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 	// create a deck
 	const deck = new Deck();
-	deck.shuffle();
-
 	// Create a new temporary Pile to preload the cards *face up*.
 	const preloadPile = new Pile(table);
 	for (let i = 0; i < deck.cards.length; i++) {
@@ -285,21 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 	// Remove the temporary Pile.
 	table.removeChild(preloadPile.element);
-
-	// add cards to the tableau
-	for (let i = 1; i <= 7; i++) {
-		for (let j = i; j <= 7; j++) {
-			const card = deck.drawCard(piles[j - 1]);
-			// turn the last card of the pile face up
-			if (j === i) {
-				card.faceUp();
-			}
-		}
-	}
-	// add remaining cards to the draw pile
-	while (deck.cards.length > 0) {
-		deck.drawCard(drawPile);
-	}
+	startGame();
 
 	// variable to keep track of selected card (only one card can be selected at a time)
 	var selected = false;
@@ -419,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				}
 				prevCard = prevCard.previousCard();
 			}
-			selectCard(false);	
+			selectCard(false);
 		});
 
 		// double click to move a card to the foundation
@@ -430,8 +471,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById('gameOverClose').addEventListener('click', function() {
 		document.getElementById('gameOver').style.display = 'none';
 	});
-	document.getElementById('gameOverStart').addEventListener('click', function() {
-		location.reload();
+	document.getElementById('gameOverStart').addEventListener('click', function () {
+		deck.reset();
+		startGame();
 	});
 
 	const buttonsDiv = document.createElement('div');

@@ -417,7 +417,7 @@ class Klondike {
 		if (this.selected) {
 			if (this.selected === foundation.topCard()) {
 				this.selectCard(false);
-			} else if (this.selected.suit == foundation.suit.symbol) {
+			} else if (this.selected.suit == foundation.suit) {
 				this.moveToPile(foundation);
 				this.checkWin();
 			}

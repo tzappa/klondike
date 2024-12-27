@@ -257,6 +257,7 @@ class DiscardPile extends Pile {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+	let gameEnded = false;
 	const table = document.getElementById('table');
 	if (table.offsetWidth < 500) {
 		imgPath += 'compact/';
@@ -348,6 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
 		while (deck.cards.length > 0) {
 			deck.drawCard(drawPile);
 		}
+		selectCard(false);
+		gameEnded = false;
 	}
 
 	// variable to keep track of selected card (only one card can be selected at a time)
@@ -392,14 +395,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	function checkWin() {
 		// check all cards are in the foundations
-		let win = true;
+		let gameEnded = true;
 		for (let suit of Suits) {
 			if (foundations[suit.name].cardsCount() < 13) {
-				win = false;
+				gameEnded = false;
 				break;
 			}
 		}
-		if (win) {
+		if (gameEnded) {
 			setTimeout(function() {
 				document.getElementById('gameOver').style.display = 'flex';
 			}, 500);
@@ -479,10 +482,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.getElementById('gameOverClose').addEventListener('click', function() {
 		document.getElementById('gameOver').style.display = 'none';
 	});
-	document.getElementById('gameOverStart').addEventListener('click', function () {
-		deck.reset();
-		startGame();
-	});
 
 	const buttonsDiv = document.createElement('div');
 	buttonsDiv.id = 'game-buttons';
@@ -524,10 +523,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	document.getElementById('newGameBtn').addEventListener('click', function () {
-		if (confirm('Are you sure you want to start a new game?')) {
-			deck.reset();
-			startGame();
-		}
-	});
+	const newGameBtns = document.getElementsByClassName('new-game-button');
+	for (let newGameBtn of newGameBtns) {
+		newGameBtn.addEventListener('click', function () {
+			if (gameEnded || confirm('Are you sure you want to start a new game?')) {
+				deck.reset();
+				startGame();
+			}
+		});
+	}
 });

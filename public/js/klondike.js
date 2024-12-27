@@ -5,8 +5,8 @@ const Suits = [
 	{symbol: '♣', name: 'clubs',    color: 'black'}
 ];
 const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-let imgPath = 'img/';
-let imgExt;
+let imgPath = 'img/'; // base path for card images
+let imgExt; // extension for card images and back image
 let space; // space between 2 consecutive cards in a tableau pile
 
 class Card {
@@ -22,9 +22,6 @@ class Card {
 	}
 
 	faceUp() {
-		if (this.isFaceUp) {
-			return ;
-		}
 		this.isFaceUp = true;
 		this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
 		this.element.alt = `${this.rank}${this.suit}`;
@@ -33,9 +30,6 @@ class Card {
 	}
 
 	faceDown() {
-		if (!this.isFaceUp) {
-			return ;
-		}
 		this.isFaceUp = false;
 		if (imgPath) {
 			this.element.src = `${imgPath}back.png`;
@@ -167,7 +161,7 @@ class Pile extends Stack {
 		if (card.pile) {
 			card.pile.removeCard(card);
 		}
-		this.cards.push(card);
+		super.addCard(card);
 		this.element.appendChild(card.element);
 		card.pile = this;
 	}
@@ -256,89 +250,78 @@ class DiscardPile extends Pile {
 	}
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-	let gameEnded = false;
-	const table = document.getElementById('table');
-	if (table.offsetWidth < 500) {
-		imgPath += 'compact/';
-		imgExt = '.png';
-		space = table.offsetWidth / 8 / 2;
-	} else {
-		imgPath += 'set6/';
-		imgExt = '.svg';
-		space = table.offsetWidth / 8 / 3.3;
-	}
-	const drawPile = new DrawPile(table);
-	const discardPile = new DiscardPile(table);
-	drawPile.onClick(function() {
-		selectCard(false);
-		// no more cards to draw
-		if (drawPile.isEmpty()) {
-			while (!discardPile.isEmpty()) {
-				let card = discardPile.topCard();
-				card.faceDown();
-				drawPile.addCard(card);
-			}
-			return ;
+class Klondike {
+	constructor() {
+		const table = document.getElementById('table');
+		if (table.offsetWidth < 500) {
+			imgPath += 'compact/';
+			imgExt = '.png';
+			space = table.offsetWidth / 8 / 2;
+		} else {
+			imgPath += 'set6/';
+			imgExt = '.svg';
+			space = table.offsetWidth / 8 / 3.3;
 		}
-		let card = drawPile.topCard();
-		discardPile.addCard(card);
-	});
-	discardPile.onClick(function() {
-		selectCard(discardPile.topCard());
-	});
-	// add a double click event listener to the discard pile - move the card to foundation
-	discardPile.onDblClick(function() {
-		moveToFoundation(discardPile);
-	});
-	// create a foundation for each suit
-	let foundations = [];
-	for (let suit of Suits) {
-		const foundation = new Foundation(table, suit);
-		// add click event listener to the foundation
-		foundation.onClick(function() {
-			if (selected) {
-				if (selected === foundation.topCard()) {
-					selectCard(false);
-				} else if (selected.suit == suit.symbol) {
-					moveToPile(foundation);
-					checkWin();
-				}
-			} else {
-				let card = foundation.topCard();
-				if (card && card.rank != 'A') {
-					selectCard(card);
-				}
-			}
-		});
-		foundations[suit.name] = foundation;
-	}
-	// create a 7 pile tableau
-	let piles = [];
-	for (let i = 1; i <= 7; i++) {
-		const tableau = new Tableau(table, `pile${i}`);
-		piles.push(tableau);
-	}
-	// create a deck
-	const deck = new Deck();
-	// Create a new temporary Pile to preload the cards *face up*.
-	const preloadPile = new Pile(table);
-	for (let i = 0; i < deck.cards.length; i++) {
-		deck.cards[i].faceUp();
-		preloadPile.addCard(deck.cards[i]);
-		deck.cards[i].faceDown();
-	}
-	// Remove the temporary Pile.
-	table.removeChild(preloadPile.element);
-	startGame();
+		// create the draw and discard piles
+		this.drawPile = new DrawPile(table);
+		this.drawPile.onClick(() => this.drawPileClick(this.drawPile));
+		this.discardPile = new DiscardPile(table);
+		this.discardPile.onClick(() => this.discardPileClick(this.discardPile));
+		this.discardPile.onDblClick(() => this.discardPileDblClick(this.discardPile));
+		// create a foundation for each suit
+		this.foundations = [];
+		for (let suit of Suits) {
+			const foundation = new Foundation(table, suit);
+			foundation.onClick(() => this.foundationClick(foundation));
+			this.foundations[suit.name] = foundation;
+		}
+		// create a 7 pile tableau
+		this.piles = [];
+		for (let i = 1; i <= 7; i++) {
+			let pile = new Tableau(table, `pile${i}`);
+			pile.onClick(() => this.tableauClick(pile));
+			pile.onDblClick(() => this.tableauDblClick(pile));
+			this.piles.push(pile);
+		}
+		// create a deck of cards
+		this.deck = new Deck();
 
-	function startGame() {
+		const buttonsDiv = document.createElement('div');
+		buttonsDiv.id = 'game-buttons';
+		table.appendChild(buttonsDiv);
+		// Button to auto move cards to the foundation
+		const autoMoveBtn = document.createElement('button');
+		autoMoveBtn.id = 'autoMove';
+		autoMoveBtn.classList.add('game-button');
+		autoMoveBtn.textContent = 'Auto Move';
+		buttonsDiv.appendChild(autoMoveBtn);
+		autoMoveBtn.addEventListener('click', () => this.autoMoveClick(this));
+
+		document.getElementById('gameOverClose').addEventListener('click', function () {
+			document.getElementById('gameOver').style.display = 'none';
+		});
+		const newGameBtns = document.getElementsByClassName('new-game-button');
+		for (let newGameBtn of newGameBtns) {
+			newGameBtn.addEventListener('click', () => {
+				if (this.gameEnded || confirm('Are you sure you want to start a new game?')) {
+					this.deck.reset();
+					this.startGame();
+				}
+			});
+		}
+
+		// variable to keep track of selected card (only one card can be selected at a time)
+		this.selected = false;
+		this.gameEnded = false;
+	}
+
+	startGame() {
 		document.getElementById('gameOver').style.display = 'none';
-		deck.shuffle();
+		this.deck.shuffle();
 		// add cards to the tableau
 		for (let i = 1; i <= 7; i++) {
 			for (let j = i; j <= 7; j++) {
-				const card = deck.drawCard(piles[j - 1]);
+				let card = this.deck.drawCard(this.piles[j - 1]);
 				// turn the last card of the pile face up
 				if (j === i) {
 					card.faceUp();
@@ -346,190 +329,195 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 		// add remaining cards to the draw pile
-		while (deck.cards.length > 0) {
-			deck.drawCard(drawPile);
+		while (this.deck.cards.length > 0) {
+			this.deck.drawCard(this.drawPile);
 		}
-		selectCard(false);
-		gameEnded = false;
+		this.selectCard(false);
+		this.gameEnded = false;
 	}
 
-	// variable to keep track of selected card (only one card can be selected at a time)
-	var selected = false;
-	function selectCard(card) {
-		if (selected) {
-			selected.element.classList.remove('selected');
-			if (selected == card) {
-				selected = false;
+	selectCard(card) {
+		if (this.selected) {
+			this.selected.element.classList.remove('selected');
+			if (this.selected == card) {
+				this.selected = false;
 				return;
 			}
-			selected = false;
+			this.selected = false;
 		}
 		if (card) {
 			card.element.classList.add('selected');
 		}
-		selected = card;
+		this.selected = card;
 	}
 
-	function moveToPile(pile, card = selected) {
+	moveToPile(pile, card = this.selected) {
 		let oldPile = card.pile;
 		pile.addCard(card);
-		selectCard(false);
+		this.selectCard(false);
 		if (!oldPile.isEmpty()) {
 			oldPile.topCard().faceUp();
 		}
 	}
 
-	function moveToFoundation(fromPile) {
-		selectCard(false);
+	moveToFoundation(fromPile) {
+		this.selectCard(false);
 		let card = fromPile.topCard();
 		if (!card) {
 			return;
 		}
 		try {
-			moveToPile(foundations[card.name], card);
+			this.moveToPile(this.foundations[card.name], card);
 		} catch (e) {
 			console.log(e.message);
 		}
-		checkWin();
+		this.checkWin();
 	}
 
-	function checkWin() {
+	checkWin() {
 		// check all cards are in the foundations
-		let gameEnded = true;
+		this.gameEnded = true;
 		for (let suit of Suits) {
-			if (foundations[suit.name].cardsCount() < 13) {
-				gameEnded = false;
+			if (this.foundations[suit.name].cardsCount() < 13) {
+				this.gameEnded = false;
 				break;
 			}
 		}
-		if (gameEnded) {
-			setTimeout(function() {
+		if (this.gameEnded) {
+			setTimeout(function () {
 				document.getElementById('gameOver').style.display = 'flex';
 			}, 500);
 		}
 	}
 
-	// add click event listener to the tableau piles
-	for (let i = 1; i <= 7; i++) {
-		let pile = piles[i - 1];
-		// single click to select or move a card
-		pile.onClick(function() {
-			let card = pile.topCard();
-			// if the pile is empty and selected card is a King
-			if (selected && selected.rank === 'K' && pile.isEmpty()) {
-				moveToPile(pile);
-				return ;
+	drawPileClick(pile) {
+		this.selectCard(false);
+		// no more cards to draw
+		if (pile.isEmpty()) {
+			while (!this.discardPile.isEmpty()) {
+				let card = this.discardPile.topCard();
+				card.faceDown();
+				pile.addCard(card);
 			}
-			if (!selected && card) {
-				selectCard(card);
-				return ;
-			}
-			if (selected == card) {
-				selectCard(false);
-				return ;
-			}
-			if (selected.pile == pile) {
-				selectCard(false);
-				return ;
-			}
-			if (card && (Ranks.indexOf(selected.rank) == Ranks.indexOf(card.rank) - 1) && (selected.color != card.color)) {
-				moveToPile(pile);
-				return ;
-			}
-			// no moving more than one card from the discard pile
-			if (selected.pile == discardPile) {
-				selectCard(false);
-				return ;
-			}
-			// no moving more than one card from the draw. discard or foundation piles
-			if (selected.pile == discardPile || selected.pile instanceof Foundation) {
-				selectCard(false);
-				return ;
-			}
-			// get the previous card to the selected in the pile
-			let previousCards = [];
-			previousCards.push(selected);
-			let prevCard = selected.previousCard()
-			while (prevCard) {
-				if (!prevCard.isFaceUp) {
-					break;
-				}
-				previousCards.push(prevCard);
-				if (card && Ranks.indexOf(prevCard.rank) == Ranks.indexOf(card.rank) - 1 && prevCard.color != card.color) {
-					// move all the cards to the pile in reverse order
-					for (let c of previousCards.reverse()) {
-						moveToPile(pile, c);
-					}
-					return ;
-				}
-				if (prevCard.rank === 'K' && pile.isEmpty()) {
-					// move all the cards to the pile in reverse order
-					for (let c of previousCards.reverse()) {
-						moveToPile(pile, c);
-					}
-					return ;
-				}
-				prevCard = prevCard.previousCard();
-			}
-			selectCard(false);
-		});
-
-		// double click to move a card to the foundation
-		pile.onDblClick(function() {
-			moveToFoundation(pile);
-		});
+			return;
+		}
+		let card = pile.topCard();
+		this.discardPile.addCard(card);
 	}
-	document.getElementById('gameOverClose').addEventListener('click', function() {
-		document.getElementById('gameOver').style.display = 'none';
-	});
 
-	const buttonsDiv = document.createElement('div');
-	buttonsDiv.id = 'game-buttons';
-	table.appendChild(buttonsDiv);
+	discardPileClick(pile) {
+		this.selectCard(pile.topCard());
+	}
 
-	// Button to auto move cards to the foundation
-	const autoMoveBtn = document.createElement('button');
-	autoMoveBtn.id = 'autoMove';
-	autoMoveBtn.classList.add('game-button');
-	autoMoveBtn.textContent = 'Auto Move';
-	buttonsDiv.appendChild(autoMoveBtn);
-	autoMoveBtn.addEventListener('click', autoMoveToFoundation);
-	function autoMoveToFoundation() {
-		for (let pile of piles) {
+	discardPileDblClick(pile) {
+		this.moveToFoundation(pile);
+	}
+
+	foundationClick(foundation) {
+		if (this.selected) {
+			if (this.selected === foundation.topCard()) {
+				this.selectCard(false);
+			} else if (this.selected.suit == foundation.suit.symbol) {
+				this.moveToPile(foundation);
+				this.checkWin();
+			}
+		} else {
+			let card = foundation.topCard();
+			if (card && card.rank != 'A') {
+				this.selectCard(card);
+			}
+		}
+	}
+
+	tableauClick(pile) {
+		let card = pile.topCard();
+		if (pile.isEmpty() && this.selected && this.selected.rank === 'K') {
+			this.moveToPile(pile);
+			return;
+		}
+		if (!this.selected && card) {
+			this.selectCard(card);
+			return;
+		}
+		if ((this.selected === card) || (this.selected.pile == pile)) {
+			this.selectCard(false);
+			return;
+		}
+		if (card && (Ranks.indexOf(this.selected.rank) == Ranks.indexOf(card.rank) - 1) && (this.selected.color != card.color)) {
+			this.moveToPile(pile);
+			return;
+		}
+		// no moving more than one card from the discard pile or foundation piles
+		if (this.selected.pile instanceof DiscardPile || this.selected.pile instanceof Foundation) {
+			this.selectCard(false);
+			return;
+		}
+		// get the previous card to the selected in the pile
+		let previousCards = [];
+		previousCards.push(this.selected);
+		let prevCard = this.selected.previousCard()
+		while (prevCard) {
+			if (!prevCard.isFaceUp) {
+				break;
+			}
+			previousCards.push(prevCard);
+			if (card && Ranks.indexOf(prevCard.rank) == Ranks.indexOf(card.rank) - 1 && prevCard.color != card.color) {
+				// move all the cards to the pile in reverse order
+				for (let c of previousCards.reverse()) {
+					this.moveToPile(pile, c);
+				}
+				return;
+			}
+			if (prevCard.rank === 'K' && pile.isEmpty()) {
+				// move all the cards to the pile in reverse order
+				for (let c of previousCards.reverse()) {
+					this.moveToPile(pile, c);
+				}
+				return;
+			}
+			prevCard = prevCard.previousCard();
+		}
+		this.selectCard(false);
+	}
+
+	tableauDblClick(pile) {
+		let card = pile.topCard();
+		if (card) {
+			this.moveToFoundation(pile);
+		}
+	}
+
+	autoMoveClick(klondike) {
+		for (let pile of klondike.piles) {
 			let card = pile.topCard();
 			if (card) {
 				if (card.rank == 'A') {
-					moveToFoundation(pile);
-					setTimeout(autoMoveToFoundation, 220);
-					return ;
-				} else if (foundations[card.name].topCard() && Ranks.indexOf(foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
-					moveToFoundation(pile);
-					setTimeout(autoMoveToFoundation, 220);
-					return ;
+					klondike.moveToFoundation(pile);
+					setTimeout(klondike.autoMoveClick, 200, klondike);
+					return;
+				} else if (klondike.foundations[card.name].topCard() && Ranks.indexOf(klondike.foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+					klondike.moveToFoundation(pile);
+					setTimeout(klondike.autoMoveClick, 200, klondike);
+					return;
 				}
 			}
 		}
-		let card = discardPile.topCard();
+		let card = klondike.discardPile.topCard();
 		if (card) {
 			if (card.rank == 'A') {
-				moveToFoundation(discardPile);
-				setTimeout(autoMoveToFoundation, 220);
-				return ;
-			} else if (foundations[card.name].topCard() && Ranks.indexOf(foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
-				moveToFoundation(discardPile);
-				setTimeout(autoMoveToFoundation, 220);
-				return ;
+				klondike.moveToFoundation(klondike.discardPile);
+				setTimeout(klondike.autoMoveClick, 200, klondike);
+				return;
+			} else if (klondike.foundations[card.name].topCard() && Ranks.indexOf(klondike.foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+				klondike.moveToFoundation(klondike.discardPile);
+				setTimeout(klondike.autoMoveClick, 200, klondike);
+				return;
 			}
 		}
 	}
+}
 
-	const newGameBtns = document.getElementsByClassName('new-game-button');
-	for (let newGameBtn of newGameBtns) {
-		newGameBtn.addEventListener('click', function () {
-			if (gameEnded || confirm('Are you sure you want to start a new game?')) {
-				deck.reset();
-				startGame();
-			}
-		});
-	}
+document.addEventListener('DOMContentLoaded', function() {
+	const klondike = new Klondike();
+	klondike.startGame();
 });

@@ -22,6 +22,9 @@ class Card {
 	}
 
 	faceUp() {
+		if (this.isFaceUp) {
+			return ;
+		}
 		this.isFaceUp = true;
 		this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
 		this.element.alt = `${this.rank}${this.suit}`;
@@ -30,6 +33,9 @@ class Card {
 	}
 
 	faceDown() {
+		if (!this.isFaceUp) {
+			return ;
+		}
 		this.isFaceUp = false;
 		if (imgPath) {
 			this.element.src = `${imgPath}back.png`;
@@ -132,7 +138,9 @@ class Deck extends Stack {
 
 	reset() {
 		for (let card of this.deckCards) {
-			card.pile.removeCard(card);
+			if (card.pile) {
+				card.pile.removeCard(card);
+			}
 			card.faceDown();
 			this.addCard(card);
 		}
@@ -249,25 +257,6 @@ class DiscardPile extends Pile {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	function startGame() {
-		document.getElementById('gameOver').style.display = 'none';
-		deck.shuffle();
-		// add cards to the tableau
-		for (let i = 1; i <= 7; i++) {
-			for (let j = i; j <= 7; j++) {
-				const card = deck.drawCard(piles[j - 1]);
-				// turn the last card of the pile face up
-				if (j === i) {
-					card.faceUp();
-				}
-			}
-		}
-		// add remaining cards to the draw pile
-		while (deck.cards.length > 0) {
-			deck.drawCard(drawPile);
-		}
-	}
-
 	const table = document.getElementById('table');
 	if (table.offsetWidth < 500) {
 		imgPath += 'compact/';
@@ -341,6 +330,25 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Remove the temporary Pile.
 	table.removeChild(preloadPile.element);
 	startGame();
+
+	function startGame() {
+		document.getElementById('gameOver').style.display = 'none';
+		deck.shuffle();
+		// add cards to the tableau
+		for (let i = 1; i <= 7; i++) {
+			for (let j = i; j <= 7; j++) {
+				const card = deck.drawCard(piles[j - 1]);
+				// turn the last card of the pile face up
+				if (j === i) {
+					card.faceUp();
+				}
+			}
+		}
+		// add remaining cards to the draw pile
+		while (deck.cards.length > 0) {
+			deck.drawCard(drawPile);
+		}
+	}
 
 	// variable to keep track of selected card (only one card can be selected at a time)
 	var selected = false;
@@ -515,4 +523,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 	}
+
+	document.getElementById('newGameBtn').addEventListener('click', function () {
+		if (confirm('Are you sure you want to start a new game?')) {
+			deck.reset();
+			startGame();
+		}
+	});
 });

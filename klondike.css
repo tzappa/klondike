@@ -5,7 +5,7 @@ body {
 }
 .klondike {
 	margin: 0 auto;
-	max-width: 820px;;
+	max-width: 820px;
 }
 .klondike-header {
 	display: flex;
@@ -121,7 +121,7 @@ img.card {
 }
 
 .card.selected {
-	box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.5);
+	box-shadow: 0 8px 8px 4px rgba(255, 0, 0, 0.7);
 }
 
 .clubs {

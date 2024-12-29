@@ -1,20 +1,17 @@
-const Suits = [
-	{symbol: '♠', name: 'spades',   color: 'black'},
-	{symbol: '♥', name: 'hearts',   color: 'red'},
-	{symbol: '♦', name: 'diamonds', color: 'red'},
-	{symbol: '♣', name: 'clubs',    color: 'black'}
-];
+const Suits = ['♠', '♥', '♦', '♣'];
+const SuitNames = ['spades', 'hearts', 'diamonds', 'clubs'];
 const Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 let imgPath = 'img/'; // base path for card images
 let imgExt; // extension for card images and back image
+let animationSpeed = 30; // ms for card animation
 let space; // space between 2 consecutive cards in a tableau pile
 
 class Card {
 	constructor(suit, rank, faceUp = true) {
-		this.suit = suit.symbol;
-		this.color = suit.color;
-		this.name = suit.name;
+		this.suit = suit;
 		this.rank = rank;
+		this.color = suit === '♠' || suit === '♣' ? 'black' : 'red';
+		this.name = SuitNames[Suits.indexOf(suit)];
 		this.pile = null;
 		this.element = document.createElement('img');
 		this.element.classList.add('card');
@@ -44,6 +41,18 @@ class Card {
 	pos(left, top) {
 		this.element.style.left = `${left}px`;
 		this.element.style.top = `${top}px`;
+	}
+
+    mark(className = 'selected') {
+        this.element.classList.add(className);
+    }
+
+    unmark(className = 'selected') {
+        this.element.classList.remove(className);
+    }
+
+    isMarked(className = 'selected') {
+        return this.element.classList.contains(className);
 	}
 
 	previousCard() {
@@ -96,7 +105,10 @@ class Stack {
 	}
 
 	cardIndex(card) {
-		return this.cards.indexOf(card);
+        if (card instanceof Card) {
+            return this.cards.indexOf(card);
+        }
+        return this.cards.findIndex(c => c.toString() === card);
 	}
 
 	shuffle() {
@@ -130,14 +142,24 @@ class Deck extends Stack {
 		return card;
 	}
 
+    addCard(card) {
+		if (card.pile) {
+			card.pile.removeCard(card);
+		}
+		super.addCard(card);
+	}
+
 	reset() {
 		for (let card of this.deckCards) {
 			if (card.pile) {
 				card.pile.removeCard(card);
 			}
-			card.faceDown();
 			this.addCard(card);
 		}
+	}
+
+	findDeckCard(card) {
+		return this.deckCards.find(c => c.toString() === card.toString());
 	}
 }
 
@@ -197,10 +219,9 @@ class Tableau extends Pile {
 class Foundation extends Pile {
 	constructor(parent, suit) {
 		super(parent);
-
-		this.element.id = `foundation-${suit.name}`;
-		this.name = suit.name;
-		this.suit = suit.symbol;
+		this.name = SuitNames[Suits.indexOf(suit)];
+		this.element.id = `foundation-${this.element.name}`;
+		this.suit = suit;
 		this.element.innerHTML = this.suit;
 		this.element.classList.add('foundation');
 		this.element.classList.add(this.name);
@@ -251,8 +272,7 @@ class DiscardPile extends Pile {
 }
 
 class Klondike {
-	constructor() {
-		const table = document.getElementById('table');
+	constructor(table) {
 		if (table.offsetWidth < 500) {
 			imgPath += 'compact/';
 			imgExt = '.png';
@@ -273,7 +293,7 @@ class Klondike {
 		for (let suit of Suits) {
 			const foundation = new Foundation(table, suit);
 			foundation.onClick(() => this.foundationClick(foundation));
-			this.foundations[suit.name] = foundation;
+			this.foundations[suit] = foundation;
 		}
 		// create a 7 pile tableau
 		this.piles = [];
@@ -303,6 +323,9 @@ class Klondike {
 		const newGameBtns = document.getElementsByClassName('new-game-button');
 		for (let newGameBtn of newGameBtns) {
 			newGameBtn.addEventListener('click', () => {
+				if (this.dealing) {
+					return ;
+				}
 				if (this.gameEnded || confirm('Are you sure you want to start a new game?')) {
 					this.deck.reset();
 					this.startGame();
@@ -313,19 +336,28 @@ class Klondike {
 		// variable to keep track of selected card (only one card can be selected at a time)
 		this.selected = false;
 		this.gameEnded = false;
+		this.dealing = true;
 	}
 
 	startGame() {
 		document.getElementById('gameOver').style.display = 'none';
+		this.dealing = true;
 		this.deck.shuffle();
+		setTimeout(() => this.dealCard(), animationSpeed);
+	}
+
+	dealCard() {
 		// add cards to the tableau
-		for (let i = 1; i <= 7; i++) {
-			for (let j = i; j <= 7; j++) {
-				let card = this.deck.drawCard(this.piles[j - 1]);
-				// turn the last card of the pile face up
-				if (j === i) {
+		for (let i = 0; i <= 6; i++) {
+			if (this.piles[i].cards.length < i + 1) {
+				let card = this.deck.drawCard(this.piles[i]);
+				if (this.piles[i].cards.length == i + 1) {
 					card.faceUp();
+				} else {
+					card.faceDown();
 				}
+				setTimeout(() => this.dealCard(), animationSpeed);
+				return;
 			}
 		}
 		// add remaining cards to the draw pile
@@ -334,11 +366,12 @@ class Klondike {
 		}
 		this.selectCard(false);
 		this.gameEnded = false;
+		this.dealing = false;
 	}
 
 	selectCard(card) {
 		if (this.selected) {
-			this.selected.element.classList.remove('selected');
+			this.selected.unmark();
 			if (this.selected == card) {
 				this.selected = false;
 				return;
@@ -346,7 +379,7 @@ class Klondike {
 			this.selected = false;
 		}
 		if (card) {
-			card.element.classList.add('selected');
+			card.mark();
 		}
 		this.selected = card;
 	}
@@ -367,7 +400,7 @@ class Klondike {
 			return;
 		}
 		try {
-			this.moveToPile(this.foundations[card.name], card);
+			this.moveToPile(this.foundations[card.suit], card);
 		} catch (e) {
 			console.log(e.message);
 		}
@@ -378,7 +411,7 @@ class Klondike {
 		// check all cards are in the foundations
 		this.gameEnded = true;
 		for (let suit of Suits) {
-			if (this.foundations[suit.name].cardsCount() < 13) {
+			if (this.foundations[suit].cardsCount() < 13) {
 				this.gameEnded = false;
 				break;
 			}
@@ -493,11 +526,11 @@ class Klondike {
 			if (card) {
 				if (card.rank == 'A') {
 					klondike.moveToFoundation(pile);
-					setTimeout(klondike.autoMoveClick, 200, klondike);
+					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
-				} else if (klondike.foundations[card.name].topCard() && Ranks.indexOf(klondike.foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+				} else if (klondike.foundations[card.suit].topCard() && Ranks.indexOf(klondike.foundations[card.suit].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
 					klondike.moveToFoundation(pile);
-					setTimeout(klondike.autoMoveClick, 200, klondike);
+					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
 				}
 			}
@@ -506,11 +539,11 @@ class Klondike {
 		if (card) {
 			if (card.rank == 'A') {
 				klondike.moveToFoundation(klondike.discardPile);
-				setTimeout(klondike.autoMoveClick, 200, klondike);
+				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;
-			} else if (klondike.foundations[card.name].topCard() && Ranks.indexOf(klondike.foundations[card.name].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+			} else if (klondike.foundations[card.suit].topCard() && Ranks.indexOf(klondike.foundations[card.suit].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
 				klondike.moveToFoundation(klondike.discardPile);
-				setTimeout(klondike.autoMoveClick, 200, klondike);
+				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;
 			}
 		}
@@ -518,6 +551,6 @@ class Klondike {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	const klondike = new Klondike();
+	const klondike = new Klondike(document.getElementById('table'));
 	klondike.startGame();
 });

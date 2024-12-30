@@ -1,5 +1,7 @@
+Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 let animationSpeed = 30; // ms for card animation
 let space; // space between 2 consecutive cards in a tableau pile
+
 
 class Tableau extends Pile {
 	constructor(parent, id) {

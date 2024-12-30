@@ -1,15 +1,25 @@
-let Suits = ['♠', '♥', '♦', '♣'];
-let SuitNames = ['spades', 'hearts', 'diamonds', 'clubs'];
-let Ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-let imgPath = 'img/'; // base path for card images
-let imgExt = '.svg'; // extension for card images and back image
+class Suit {
+	static list = ['♠', '♥', '♦', '♣'];
+
+	static index = suit => Suit.list.indexOf(suit);
+	static name = suit => ['spades', 'hearts', 'diamonds', 'clubs'][Suit.index(suit)];
+	static color = suit => suit === '♠' || suit === '♣' ? 'black' : 'red';
+}
+
+class Rank {
+	static list = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+	static index = rank => Rank.list.indexOf(rank);
+}
 
 class Card {
+	static imgPath = 'img/'; // base path for card images
+	static imgExt = '.svg'; // extension for card images and back image
+
 	constructor(suit, rank, faceUp = true) {
 		this.suit = suit;
 		this.rank = rank;
-		this.color = suit === '♠' || suit === '♣' ? 'black' : 'red';
-		this.name = SuitNames[Suits.indexOf(suit)];
+		this.color = Suit.color(suit);
+		this.name = Suit.name(suit);
 		this.pile = null;
 		this.element = document.createElement('img');
 		this.element.classList.add('card');
@@ -18,7 +28,7 @@ class Card {
 
 	faceUp() {
 		this.isFaceUp = true;
-		this.element.src = `${imgPath}${this.rank}${this.name[0]}${imgExt}`;
+		this.element.src = `${Card.imgPath}${this.rank}${this.name[0]}${Card.imgExt}`;
 		this.element.alt = `${this.rank}${this.suit}`;
 		this.element.classList.remove('facedown');
 		this.element.classList.add(this.name);
@@ -26,8 +36,8 @@ class Card {
 
 	faceDown() {
 		this.isFaceUp = false;
-		if (imgPath) {
-			this.element.src = `${imgPath}back.png`;
+		if (Card.imgPath) {
+			this.element.src = `${Card.imgPath}back.png`;
 			this.element.alt = '';
 		} else {
 			this.element.innerHTML = this.toString();
@@ -121,13 +131,12 @@ class Stack {
 	}
 }
 
-
 class Deck extends Stack {
 	constructor(faceUp = false) {
 		super();
 		this.deckCards = [];
-		for (let suit of Suits) {
-			for (let rank of Ranks) {
+		for (let suit of Suit.list) {
+			for (let rank of Rank.list) {
 				let card = new Card(suit, rank, faceUp);
 				this.addCard(card);
 				this.deckCards.push(card);

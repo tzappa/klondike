@@ -1,7 +1,5 @@
-Ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 let animationSpeed = 30; // ms for card animation
 let space; // space between 2 consecutive cards in a tableau pile
-
 
 class Tableau extends Pile {
 	constructor(parent, id) {
@@ -27,7 +25,7 @@ class Tableau extends Pile {
 class Foundation extends Pile {
 	constructor(parent, suit) {
 		super(parent);
-		this.name = SuitNames[Suits.indexOf(suit)];
+		this.name = Suit.name(suit);
 		this.element.id = `foundation-${this.element.name}`;
 		this.suit = suit;
 		this.element.innerHTML = this.suit;
@@ -43,7 +41,7 @@ class Foundation extends Pile {
 			if (card.rank != 'A') {
 				throw new Error('The foundation must start with an Ace');
 			}
-		} else if (Ranks.indexOf(this.topCard().rank) != Ranks.indexOf(card.rank) - 1) {
+		} else if (Rank.index(this.topCard().rank) != Rank.index(card.rank) - 1) {
 			throw new Error('The foundation must be built in ascending order');
 		}
 		super.addCard(card);
@@ -82,14 +80,17 @@ class DiscardPile extends Pile {
 class Klondike {
 	constructor(table) {
 		if (table.offsetWidth < 500) {
-			imgPath += 'compact/';
-			imgExt = '.png';
+			Card.imgPath += 'compact/';
+			Card.imgExt = '.png';
 			space = table.offsetWidth / 8 / 2;
 		} else {
-			imgPath += 'set6/';
-			imgExt = '.svg';
+			Card.imgPath += 'set6/';
+			Card.imgExt = '.svg';
 			space = table.offsetWidth / 8 / 3.3;
 		}
+
+		Rank.list = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
 		// create the draw and discard piles
 		this.drawPile = new DrawPile(table);
 		this.drawPile.onClick(() => this.drawPileClick(this.drawPile));
@@ -98,7 +99,7 @@ class Klondike {
 		this.discardPile.onDblClick(() => this.discardPileDblClick(this.discardPile));
 		// create a foundation for each suit
 		this.foundations = [];
-		for (let suit of Suits) {
+		for (let suit of Suit.list) {
 			const foundation = new Foundation(table, suit);
 			foundation.onClick(() => this.foundationClick(foundation));
 			this.foundations[suit] = foundation;
@@ -218,7 +219,7 @@ class Klondike {
 	checkWin() {
 		// check all cards are in the foundations
 		this.gameEnded = true;
-		for (let suit of Suits) {
+		for (let suit of Suit.list) {
 			if (this.foundations[suit].cardsCount() < 13) {
 				this.gameEnded = false;
 				break;
@@ -284,7 +285,7 @@ class Klondike {
 			this.selectCard(false);
 			return;
 		}
-		if (card && (Ranks.indexOf(this.selected.rank) == Ranks.indexOf(card.rank) - 1) && (this.selected.color != card.color)) {
+		if (card && (Rank.index(this.selected.rank) == Rank.index(card.rank) - 1) && (this.selected.color != card.color)) {
 			this.moveToPile(pile);
 			return;
 		}
@@ -302,7 +303,7 @@ class Klondike {
 				break;
 			}
 			previousCards.push(prevCard);
-			if (card && Ranks.indexOf(prevCard.rank) == Ranks.indexOf(card.rank) - 1 && prevCard.color != card.color) {
+			if (card && Rank.index(prevCard.rank) == Rank.index(card.rank) - 1 && prevCard.color != card.color) {
 				// move all the cards to the pile in reverse order
 				for (let c of previousCards.reverse()) {
 					this.moveToPile(pile, c);
@@ -336,7 +337,7 @@ class Klondike {
 					klondike.moveToFoundation(pile);
 					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
-				} else if (klondike.foundations[card.suit].topCard() && Ranks.indexOf(klondike.foundations[card.suit].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+				} else if (klondike.foundations[card.suit].topCard() && Rank.index(klondike.foundations[card.suit].topCard().rank) == Rank.index(card.rank) - 1) {
 					klondike.moveToFoundation(pile);
 					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
@@ -349,7 +350,7 @@ class Klondike {
 				klondike.moveToFoundation(klondike.discardPile);
 				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;
-			} else if (klondike.foundations[card.suit].topCard() && Ranks.indexOf(klondike.foundations[card.suit].topCard().rank) == Ranks.indexOf(card.rank) - 1) {
+			} else if (klondike.foundations[card.suit].topCard() && Rank.index(klondike.foundations[card.suit].topCard().rank) == Rank.index(card.rank) - 1) {
 				klondike.moveToFoundation(klondike.discardPile);
 				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;

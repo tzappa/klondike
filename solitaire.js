@@ -9,6 +9,8 @@ class Suit {
 class Rank {
 	static list = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 	static index = rank => Rank.list.indexOf(rank);
+	static prev = rank => Rank.index(rank) > 0 ? Rank.list[Rank.index(rank) - 1] : null;
+	static next = rank => Rank.index(rank) < Rank.list.length - 1 ? Rank.list[Rank.index(rank) + 1] : null;
 }
 
 class Card {

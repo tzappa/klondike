@@ -41,7 +41,7 @@ class Foundation extends Pile {
 			if (card.rank != 'A') {
 				throw new Error('The foundation must start with an Ace');
 			}
-		} else if (Rank.index(this.topCard().rank) != Rank.index(card.rank) - 1) {
+		} else if (this.topCard().rank != Rank.prev(card.rank)) {
 			throw new Error('The foundation must be built in ascending order');
 		}
 		super.addCard(card);
@@ -285,7 +285,7 @@ class Klondike {
 			this.selectCard(false);
 			return;
 		}
-		if (card && (Rank.index(this.selected.rank) == Rank.index(card.rank) - 1) && (this.selected.color != card.color)) {
+		if (card && (this.selected.rank == Rank.prev(card.rank)) && (this.selected.color != card.color)) {
 			this.moveToPile(pile);
 			return;
 		}
@@ -303,7 +303,7 @@ class Klondike {
 				break;
 			}
 			previousCards.push(prevCard);
-			if (card && Rank.index(prevCard.rank) == Rank.index(card.rank) - 1 && prevCard.color != card.color) {
+			if (card && prevCard.rank == Rank.prev(card.rank) && prevCard.color != card.color) {
 				// move all the cards to the pile in reverse order
 				for (let c of previousCards.reverse()) {
 					this.moveToPile(pile, c);
@@ -337,7 +337,7 @@ class Klondike {
 					klondike.moveToFoundation(pile);
 					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
-				} else if (klondike.foundations[card.suit].topCard() && Rank.index(klondike.foundations[card.suit].topCard().rank) == Rank.index(card.rank) - 1) {
+				} else if (klondike.foundations[card.suit].topCard() && klondike.foundations[card.suit].topCard().rank == Rank.prev(card.rank)) {
 					klondike.moveToFoundation(pile);
 					setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 					return;
@@ -350,7 +350,7 @@ class Klondike {
 				klondike.moveToFoundation(klondike.discardPile);
 				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;
-			} else if (klondike.foundations[card.suit].topCard() && Rank.index(klondike.foundations[card.suit].topCard().rank) == Rank.index(card.rank) - 1) {
+			} else if (klondike.foundations[card.suit].topCard() && klondike.foundations[card.suit].topCard().rank == Rank.prev(card.rank)) {
 				klondike.moveToFoundation(klondike.discardPile);
 				setTimeout(klondike.autoMoveClick, animationSpeed * 4, klondike);
 				return;

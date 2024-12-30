@@ -46,6 +46,10 @@ h1 {
 #drawPile {
 	grid-area: 1/1/2/2;
 }
+#drawPile::before {
+	color: #ddd;
+	content: "\27f3";
+}
 #discardPile {
 	grid-area: 1/2/2/3;
 }

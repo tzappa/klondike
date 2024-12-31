@@ -89,6 +89,7 @@ class Klondike {
 			space = table.offsetWidth / 8 / 3.3;
 		}
 
+		// Aces are first
 		Rank.list = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 		// create the draw and discard piles
@@ -136,7 +137,6 @@ class Klondike {
 					return ;
 				}
 				if (this.gameEnded || confirm('Are you sure you want to start a new game?')) {
-					this.deck.reset();
 					this.startGame();
 				}
 			});
@@ -146,9 +146,22 @@ class Klondike {
 		this.selected = false;
 		this.gameEnded = false;
 		this.dealing = true;
+		this.deck.shuffle();
+		this.preloadCards();
+	}
+
+	preloadCards() {
+		if (this.deck.isEmpty()) {
+			setTimeout(() => this.startGame(), animationSpeed * 10);
+		} else {
+			let pile =  this.piles[(52 - this.deck.cards.length) % 7];
+			this.deck.drawCard(pile).faceUp();
+			setTimeout(() => this.preloadCards(), animationSpeed / 3);
+		}
 	}
 
 	startGame() {
+		this.deck.reset();
 		document.getElementById('gameOver').style.display = 'none';
 		this.dealing = true;
 		this.deck.shuffle();
@@ -361,5 +374,4 @@ class Klondike {
 
 document.addEventListener('DOMContentLoaded', function() {
 	const klondike = new Klondike(document.getElementById('table'));
-	klondike.startGame();
 });

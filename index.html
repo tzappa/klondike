@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Klondike Solitaire</title>
+	<meta name="description" content="Klondike Solitaire game">
 	<link rel="stylesheet" href="klondike.css" />
 </head>
 <body>
@@ -12,8 +13,6 @@
 			<h1>Klondike Solitaire</h1>
 			<div class="game-controls">
 				<button class="game-button new-game-button">New Game</button>
-				<!-- <button class="game-button" id="resetBtn">Reset</button>
-				<button class="game-button" id="undo">Undo</button> -->
 			</div>
 		</div>
 		<div class="klondike-body">
@@ -27,6 +26,20 @@
 				<button class="game-button" id="gameOverClose">Not now</button>&nbsp;&nbsp;&nbsp;
 				<button class="game-button new-game-button">Yes!</button>
 			</div>
+		</div>
+		<div class="rules">
+			<h2>About</h2>
+			<p>Klondike Solitaire is a classic card game that is played with a standard 52-card deck. The game is won when all cards are moved to the four Foundation piles.</p>
+			<h2>Rules</h2>
+			<p>Goal: Move all cards to the four Foundation piles, starting with the Ace and ending with the King in each suit.</p>
+			<p>Tableau: Build down in alternating colors. The top card of each pile is available for play on the Foundations or another Tableau pile.
+				Empty Tableau piles may be filled with a King or a pile starting with a King.</p>
+			<p>Stock: Click to deal one card. The Stock can be re-dealt as many times as needed.</p>
+			<p>Waste: Cards from the Stock are dealt to the Waste pile. Cards in the Waste pile are available for play on the Foundations or Tableau piles.</p>
+			<p>Foundation: Build up in suit from Ace to King.</p>
+			<h2>Controls</h2>
+			<p>Click a card to select it, click on a pile to move selected card. Double-click a card to move it to the Foundation.</p>
+			<p>Click on 'Auto Move' button to automatically move cards to the Foundation.</p>
 		</div>
 	</main>
 	<script src="solitaire.js"></script>

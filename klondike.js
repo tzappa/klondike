@@ -11,13 +11,13 @@ class Tableau extends Pile {
 		if (!force && !this.acceptCard(card)) {
 			return;
 		}
-		let lastCard = this.topCard();
+		let topCard = this.topCard();
 		super.addCard(card, force);
-		if (lastCard) {
-			if (lastCard.isFaceUp) {
-				card.pos(0, lastCard.element.offsetTop + space);
+		if (topCard) {
+			if (topCard.isFaceUp) {
+				card.pos(0, topCard.element.offsetTop + space);
 			} else {
-				card.pos(0, lastCard.element.offsetTop + space / 2);
+				card.pos(0, topCard.element.offsetTop + space / 2);
 			}
 		} else {
 			card.pos(0, 0);
@@ -26,9 +26,9 @@ class Tableau extends Pile {
 
 	removeCard(card) {
 		super.removeCard(card);
-		let lastCard = this.topCard();
-		if (lastCard) {
-			lastCard.faceUp();
+		let topCard = this.topCard();
+		if (topCard) {
+			topCard.faceUp();
 		}
 	}
 
@@ -82,12 +82,12 @@ class Foundation extends Pile {
 	}
 
 	acceptCard(card) {
-		if (card.suit !== this.suit) {
-			console.log('Card suit does not match foundation suit');
-			return false;
-		}
 		if (this.isEmpty() && card.rank !== 'A') {
 			console.log('First card must be an Ace');
+			return false;
+		}
+		if (card.suit !== this.suit) {
+			console.log('Card suit does not match foundation suit');
 			return false;
 		}
 		if (!this.isEmpty() && card.rank !== Rank.next(this.topCard().rank)) {

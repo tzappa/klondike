@@ -485,6 +485,6 @@ class Klondike {
 	}
 }
 
-// document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
 	const klondike = new Klondike(document.getElementById('table'));
-// });
+});

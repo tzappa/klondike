@@ -125,6 +125,13 @@ class Deck {
 		return card;
 	}
 
+	addCard(card) {
+		if (card.pile) {
+			card.pile.removeCard(card);
+		}
+		this.cards.push(card);
+	}
+
 	isEmpty() {
 		return this.cards.length === 0;
 	}
